@@ -91,7 +91,7 @@ module Shoulda
         end
 
         def description
-          "require #{@attribute} to not be set"
+          "ensure that :#{@attribute} is empty/falsy"
         end
 
         private
@@ -110,7 +110,7 @@ module Shoulda
             when :decimal then BigDecimal.new(1, 0)
             when :datetime, :time, :timestamp then Time.now
             when :date then Date.new
-            when :binary then "0"
+            when :binary then '0'
             else 'an arbitrary value'
             end
           end

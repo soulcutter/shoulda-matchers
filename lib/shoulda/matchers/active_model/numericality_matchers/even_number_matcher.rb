@@ -6,8 +6,8 @@ module Shoulda
         class EvenNumberMatcher < NumericTypeMatcher
           NON_EVEN_NUMBER_VALUE = 1
 
-          def allowed_type
-            'even numbers'
+          def allowed_type_adjective
+            'even'
           end
 
           def diff_to_compare

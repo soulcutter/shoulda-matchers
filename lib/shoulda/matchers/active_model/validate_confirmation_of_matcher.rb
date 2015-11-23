@@ -93,7 +93,7 @@ module Shoulda
         end
 
         def description
-          "require #{@confirmation_attribute} to match #{@attribute}"
+          "ensure that #{@confirmation_attribute} matches #{@attribute}"
         end
 
         def matches?(subject)

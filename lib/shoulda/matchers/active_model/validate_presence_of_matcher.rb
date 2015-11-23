@@ -128,7 +128,7 @@ module Shoulda
         end
 
         def description
-          "require #{@attribute} to be set"
+          "ensure that :#{@attribute} cannot be empty/falsy"
         end
 
         private

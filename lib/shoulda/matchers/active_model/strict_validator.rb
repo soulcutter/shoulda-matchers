@@ -17,18 +17,23 @@ module Shoulda
 
         def messages_description
           if has_messages?
-            ': ' + messages.first.message.inspect
+            "\nFull error message:\n" +
+              Shoulda::Matchers.indent(messages.first.message.inspect, 2)
           else
-            ' no exception'
+            "(There didn't seem to be an error.)"
           end
         end
 
         def expected_messages_description(expected_message)
-          if expected_message
-            "exception to include #{expected_message.inspect}"
-          else
-            'an exception to have been raised'
-          end
+          # description = "validating :#{attribute} to raise a StrictValidationFailed"
+
+          # if expected_message
+            # description << ",\nand for the error message to include #{expected_message.inspect}"
+          # end
+
+          # description
+
+          "a validation exception should have been raised with a message of #{expected_message.inspect}"
         end
 
         protected

@@ -334,7 +334,7 @@ EOT
         end
 
         def description
-          "ensure inclusion of #{@attribute} in #{inspect_message}"
+          "ensure that #{@attribute} is one of #{inspect_message}"
         end
 
         def matches?(subject)

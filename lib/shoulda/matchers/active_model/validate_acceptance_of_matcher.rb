@@ -95,7 +95,7 @@ module Shoulda
         end
 
         def description
-          "require #{@attribute} to be accepted"
+          "ensure that #{@attribute} has been set to true"
         end
       end
     end

@@ -372,23 +372,28 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         end
 
         def on(context)
-          validator.context = context
-          self
-        end
-
-        def with_message(message, options={})
-          self.options[:expected_message] = message
-          self.options[:expected_message_values] = options.fetch(:values, {})
-
-          if options.key?(:against)
-            self.attribute_to_check_message_against = options[:against]
+          if context.present?
+            validator.context = context
           end
 
           self
         end
 
-        def strict
-          validator.strict = true
+        def with_message(message, options={})
+          if message.present?
+            self.options[:expected_message] = message
+            self.options[:expected_message_values] = options.fetch(:values, {})
+
+            if options.key?(:against)
+              self.attribute_to_check_message_against = options[:against]
+            end
+          end
+
+          self
+        end
+
+        def strict(strictness = true)
+          validator.strict = strictness
           self
         end
 
@@ -412,15 +417,21 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         end
 
         def failure_message
-          "Did not expect #{expectation},\ngot#{error_description}"
+          "Expected #{model.name} to #{primary_expectation},\n" +
+            "but it #{primary_actuality}:\n\n" +
+            "Did not expect #{secondary_expectation},\n" +
+            "but it #{secondary_actuality}" +
+            error_description
         end
 
         def failure_message_when_negated
-          "Expected #{expectation},\ngot#{error_description}"
+          "Expected #{model.name} not to #{primary_expectation},\n" +
+            "but it #{primary_actuality_when_negated} " +
+            "(#{secondary_expectation})."
         end
 
         def description
-          validator.allow_description(allowed_values)
+          "be valid with :#{attribute_to_set} set to #{allowed_values}"
         end
 
         protected
@@ -428,6 +439,12 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         attr_reader :instance, :attribute_to_check_message_against
         attr_accessor :values_to_match, :attribute_to_set, :value,
           :matched_error, :after_setting_value_callback, :validator
+
+        private
+
+        def model
+          instance.class
+        end
 
         def instance=(instance)
           @instance = instance
@@ -504,26 +521,47 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           validator.captured_range_error?
         end
 
-        def expectation
-          parts = [
-            expected_messages_description,
-            "when #{attribute_to_set} is set to #{value.inspect}"
-          ]
-
-          parts.join(' ').squeeze(' ')
+        def primary_expectation
+          description
         end
 
-        def expected_messages_description
+        def primary_actuality
+          "was not valid"
+        end
+
+        def primary_actuality_when_negated
+          "was valid"
+        end
+
+        def secondary_expectation
+          #parts = [
+          #  expected_messages_description,
+          #  "when set to #{value.inspect}"
+          #]
+
+          #parts.join(' ').squeeze(' ')
+
           validator.expected_messages_description(expected_message)
         end
+
+        def secondary_actuality
+          validator.actual_messages_description
+        end
+
+        # def expected_messages_description
+          # validator.expected_messages_description(expected_message)
+        # end
 
         def error_description
           validator.messages_description
         end
 
         def allowed_values
-          if values_to_match.length > 1
-            "any of [#{values_to_match.map(&:inspect).join(', ')}]"
+          if values_to_match.size > 1
+            "any of " + values_to_match.to_sentence(
+              two_words_connector: " or ",
+              last_word_connector: ", or"
+            )
           else
             values_to_match.first.inspect
           end

@@ -246,11 +246,19 @@ module Shoulda
         end
 
         def description
-          result = "require "
-          result << "case sensitive " unless @options[:case_insensitive]
-          result << "unique value for #{@attribute}"
-          result << " scoped to #{@options[:scopes].join(', ')}" if @options[:scopes].present?
-          result
+          description = "ensure that #{@attribute} is unique"
+
+          if @options[:scopes].present?
+            description << " scoped to #{@options[:scopes].to_sentence}"
+          end
+
+          if @options[:case_insensitive]
+            description << ' case insensitively'
+          else
+            description << ' case sensitively'
+          end
+
+          description
         end
 
         def matches?(subject)

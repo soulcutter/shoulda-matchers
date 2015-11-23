@@ -35,8 +35,12 @@ module Shoulda
             self
           end
 
-          def allowed_type
+          def allowed_type_name
             raise NotImplementedError
+          end
+
+          def allowed_type_adjective
+            ''
           end
 
           def diff_to_compare

@@ -145,7 +145,7 @@ module Shoulda
         end
 
         def description
-          "ensure exclusion of #{@attribute} in #{inspect_message}"
+          "ensure that #{@attribute} is none of #{inspect_message}"
         end
 
         def matches?(subject)

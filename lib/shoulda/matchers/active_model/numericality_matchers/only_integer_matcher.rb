@@ -6,8 +6,8 @@ module Shoulda
         class OnlyIntegerMatcher < NumericTypeMatcher
           NON_INTEGER_VALUE = 0.1
 
-          def allowed_type
-            'integers'
+          def allowed_type_name
+            'integer'
           end
 
           def diff_to_compare

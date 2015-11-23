@@ -3,33 +3,33 @@ require 'shoulda/matchers/util/word_wrap'
 
 describe Shoulda::Matchers, ".word_wrap" do
   it "can wrap a simple paragraph" do
-    wrapped_message = described_class.word_wrap(<<-MESSAGE.strip)
+    wrapped_message = described_class.word_wrap(<<-MESSAGE.rstrip)
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean luctus, ipsum sit amet efficitur feugiat
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean luctus,
 ipsum sit amet efficitur feugiat
     MESSAGE
   end
 
   it "does not split words up when wrapping" do
-    wrapped_message = described_class.word_wrap(<<-MESSAGE.strip)
+    wrapped_message = described_class.word_wrap(<<-MESSAGE.rstrip)
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean lusciousness, ipsum sit amet efficitur feugiat
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
 lusciousness, ipsum sit amet efficitur feugiat
     MESSAGE
   end
 
   it "considers punctuation as part of a word" do
-    wrapped_message = described_class.word_wrap(<<-MESSAGE.strip)
+    wrapped_message = described_class.word_wrap(<<-MESSAGE.rstrip)
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean luscious, ipsum sit amet efficitur feugiat
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
 luscious, ipsum sit amet efficitur feugiat
     MESSAGE
@@ -44,7 +44,7 @@ ipsum sit amet efficitur feugiat,
 dolor mauris fringilla erat, sed posuere diam ex ut velit.
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean luctus,
 ipsum sit amet efficitur feugiat, dolor mauris fringilla erat, sed
 posuere diam ex ut velit.
@@ -52,13 +52,13 @@ posuere diam ex ut velit.
   end
 
   it "can wrap multiple paragraphs" do
-    wrapped_message = described_class.word_wrap(<<-MESSAGE.strip)
+    wrapped_message = described_class.word_wrap(<<-MESSAGE.rstrip)
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla erat, sed posuere diam ex ut velit.
 
 Etiam ultrices cursus ligula eget feugiat. Vestibulum eget tincidunt risus, non faucibus sem. 
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean luctus,
 ipsum sit amet efficitur feugiat, dolor mauris fringilla erat, sed
 posuere diam ex ut velit.
@@ -74,7 +74,7 @@ risus, non faucibus sem.
 * And the beat goes on.
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 * Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
   luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla
   erat, sed posuere diam ex ut velit.
@@ -93,7 +93,7 @@ risus, non faucibus sem.
 * And the beat goes on.
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 * Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
   luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla
   erat, sed posuere diam ex ut velit.
@@ -107,7 +107,7 @@ risus, non faucibus sem.
 2. And the beat goes on.
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
    luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla
    erat, sed posuere diam ex ut velit.
@@ -126,7 +126,7 @@ risus, non faucibus sem.
 2. And the beat goes on.
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
    luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla
    erat, sed posuere diam ex ut velit.
@@ -140,7 +140,7 @@ risus, non faucibus sem.
 2) And the beat goes on.
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 1) Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
    luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla
    erat, sed posuere diam ex ut velit.
@@ -159,7 +159,7 @@ risus, non faucibus sem.
 2) And the beat goes on.
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 1) Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
    luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla
    erat, sed posuere diam ex ut velit.
@@ -176,7 +176,7 @@ Some text is gonna go here.
 And now we return.
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 Some text is gonna go here.
 
     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla erat, sed posuere diam ex ut velit.
@@ -190,8 +190,21 @@ And now we return.
 Loremipsumdolorsitamet,consecteturadipiscingelit.Aeneanluctus,ipsumsitametefficiturfeugiat,
     MESSAGE
 
-    expect(wrapped_message).to eq(<<-MESSAGE.strip)
+    expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 Loremipsumdolorsitamet,consecteturadipiscingelit.Aeneanluctus,ipsumsitametefficiturfeugiat,
     MESSAGE
+  end
+
+  context "when :indent is given" do
+    it "uses the given indentation level when determining where to wrap lines" do
+      wrapped_message = described_class.word_wrap(<<-MESSAGE.strip, indent: 2)
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean luctus, ipsum sit amet efficitur feugiat
+      MESSAGE
+
+      expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
+  luctus, ipsum sit amet efficitur feugiat
+      MESSAGE
+    end
   end
 end
