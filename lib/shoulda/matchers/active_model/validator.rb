@@ -24,22 +24,20 @@ module Shoulda
         end
 
         def expected_messages_description(expected_message)
-          # if expected_message
-            # "validation errors on :#{attribute}" +
-              # (in_negative ? " to " : " not to ") +
-              # "include #{expected_message.inspect}"
-          # else
-            # ":#{attribute} to be invalid in some way"
-          # end
+          "validation errors on :#{attribute} should have been present " +
+            "and have included #{expected_message.inspect}"
+        end
 
-          "validation errors on :#{attribute} should have been present and have included #{expected_message.inspect}"
+        def expected_messages_description_when_negated(expected_message)
+          "validation errors on :#{attribute} included " +
+            "#{expected_message.inspect} when it was not supposed to"
         end
 
         def actual_messages_description
           if has_messages?
-            ".\nAll validation messages:\n#{pretty_error_messages(record)}"
+            ".\n\nAll validation messages:\n#{pretty_error_messages(record)}"
           else
-            ', and in fact no validation messages were found on the record.'
+            ".\n\nNo validation messages were found on the record."
           end
         end
 

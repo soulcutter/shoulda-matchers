@@ -430,10 +430,10 @@ module Shoulda
 
         def failure_message
           "#{overall_failure_message}".tap do |message|
-            if submatcher_failure_message.present?
+            failing_submatchers.each do |submatcher|
               message << "\n"
               message << Shoulda::Matchers.word_wrap(
-                submatcher_failure_message,
+                submatcher.failure_message,
                 indent: 2
               )
             end
@@ -443,6 +443,7 @@ module Shoulda
         def failure_message_when_negated
           "#{overall_failure_message_when_negated}".tap do |message|
             if submatcher_failure_message_when_negated.present?
+              raise "well that's weird"
               message << "\n"
               message << Shoulda::Matchers.word_wrap(
                 submatcher_failure_message_when_negated,
@@ -463,11 +464,15 @@ module Shoulda
         end
 
         def overall_failure_message
-          Shoulda::Matchers.word_wrap("#{model.name} did not properly #{description}.")
+          Shoulda::Matchers.word_wrap(
+            "#{model.name} did not properly #{description}."
+          )
         end
 
         def overall_failure_message_when_negated
-          Shoulda::Matchers.word_wrap("Expected #{model.name} not to #{description}, but it did.")
+          Shoulda::Matchers.word_wrap(
+            "Expected #{model.name} not to #{description}, but it did."
+          )
         end
 
         def column_type
@@ -519,7 +524,11 @@ module Shoulda
         end
 
         def first_failing_submatcher
-          @_first_failing_submatcher ||= @submatchers.detect do |submatcher|
+          failing_submatchers.first
+        end
+
+        def failing_submatchers
+          @_failing_submatchers ||= @submatchers.select do |submatcher|
             !submatcher.matches?(@subject)
           end
         end
@@ -538,7 +547,7 @@ module Shoulda
 
         def comparison_descriptions
           description_array = submatcher_comparison_descriptions
-          description_array.empty? ? '' : 'which is ' + submatcher_comparison_descriptions.join(' and ')
+          description_array.empty? ? '' : submatcher_comparison_descriptions.join(' and ')
         end
 
         def submatcher_comparison_descriptions

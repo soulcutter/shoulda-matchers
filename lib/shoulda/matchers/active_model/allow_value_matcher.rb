@@ -418,10 +418,9 @@ https://github.com/thoughtbot/shoulda-matchers/issues
 
         def failure_message
           "Expected #{model.name} to #{primary_expectation},\n" +
-            "but it #{primary_actuality}:\n\n" +
-            "Did not expect #{secondary_expectation},\n" +
-            "but it #{secondary_actuality}" +
-            error_description
+            "but it #{primary_actuality} " +
+            "(#{secondary_expectation_when_negated})." +
+          secondary_actuality
         end
 
         def failure_message_when_negated
@@ -534,26 +533,15 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         end
 
         def secondary_expectation
-          #parts = [
-          #  expected_messages_description,
-          #  "when set to #{value.inspect}"
-          #]
-
-          #parts.join(' ').squeeze(' ')
-
           validator.expected_messages_description(expected_message)
+        end
+
+        def secondary_expectation_when_negated
+          validator.expected_messages_description_when_negated(expected_message)
         end
 
         def secondary_actuality
           validator.actual_messages_description
-        end
-
-        # def expected_messages_description
-          # validator.expected_messages_description(expected_message)
-        # end
-
-        def error_description
-          validator.messages_description
         end
 
         def allowed_values

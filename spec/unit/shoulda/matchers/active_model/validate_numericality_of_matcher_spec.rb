@@ -167,10 +167,16 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'and not validating anything' do
       it 'rejects since it does not disallow non-numbers' do
         record = build_record_validating_nothing
+
         assertion = -> { expect(record).to validate_numericality }
-        expect(&assertion).to fail_with_message_including(
-          'Expected errors to include "is not a number"'
-        )
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is a number.
+  Upon setting :attr to "abcd", expected the Example to be invalid, but
+  it was valid instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -186,12 +192,19 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'and not validating with allow_nil' do
       it 'rejects since it tries to treat nil as a number' do
         record = build_record_validating_numericality
+
         assertion = lambda do
           expect(record).to validate_numericality.allow_nil
         end
-        expect(&assertion).to fail_with_message_including(
-          %[Did not expect errors to include "is not a number" when #{attribute_name} is set to nil]
-        )
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is a number, allowing nil.
+  Upon setting :attr to nil, expected the Example to be valid, but
+  it was invalid instead (validation errors on :attr included "is not a
+  number" when they were not supposed to).
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -207,12 +220,18 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'and not validating with only_integer' do
       it 'rejects since it does not disallow non-integers' do
         record = build_record_validating_numericality
+
         assertion = lambda do
           expect(record).to validate_numericality.only_integer
         end
-        expect(&assertion).to fail_with_message_including(
-          'Expected errors to include "must be an integer"'
-        )
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is an integer.
+  Upon setting :attr to "0.1", expected the Example to be invalid, but
+  it was valid instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -261,12 +280,18 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'and not validating with odd' do
       it 'rejects since it does not disallow even numbers' do
         record = build_record_validating_numericality
+
         assertion = lambda do
           expect(record).to validate_numericality.odd
         end
-        expect(&assertion).to fail_with_message_including(
-          'Expected errors to include "must be odd"'
-        )
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is an odd number.
+  Upon setting :attr to "2", expected the Example to be invalid, but it
+  was valid instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -315,10 +340,18 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'and not validating with even' do
       it 'rejects since it does not disallow odd numbers' do
         record = build_record_validating_numericality
-        assertion = -> { expect(record).to validate_numericality.even }
-        expect(&assertion).to fail_with_message_including(
-          'Expected errors to include "must be even"'
-        )
+
+        assertion = lambda do
+          expect(record).to validate_numericality.even
+        end
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is an even number.
+  Upon setting :attr to "1", expected the Example to be invalid, but it
+  was valid instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -369,14 +402,19 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'and not validating with less_than_or_equal_to' do
       it 'rejects since it does not disallow numbers greater than the value' do
         record = build_record_validating_numericality
+
         assertion = lambda do
-          expect(record).
-            to validate_numericality.
-            is_less_than_or_equal_to(18)
+          expect(record).to validate_numericality.is_less_than_or_equal_to(18)
         end
-        expect(&assertion).to fail_with_message_including(
-          'Expected errors to include "must be less than or equal to 18"'
-        )
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is a number less than or
+equal to 18.
+  Upon setting :attr to "19", expected the Example to be invalid, but it
+  was valid instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -427,14 +465,18 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'and not validating with less_than' do
       it 'rejects since it does not disallow numbers greater than or equal to the value' do
         record = build_record_validating_numericality
+
         assertion = lambda do
-          expect(record).
-            to validate_numericality.
-            is_less_than(18)
+          expect(record).to validate_numericality.is_less_than(18)
         end
-        expect(&assertion).to fail_with_message_including(
-          'Expected errors to include "must be less than 18"'
-        )
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is a number less than 18.
+  Upon setting :attr to "19", expected the Example to be invalid, but it
+  was valid instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -483,12 +525,18 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'and not validating with equal_to' do
       it 'rejects since it does not disallow numbers that are not the value' do
         record = build_record_validating_numericality
+
         assertion = lambda do
           expect(record).to validate_numericality.is_equal_to(18)
         end
-        expect(&assertion).to fail_with_message_including(
-          'Expected errors to include "must be equal to 18"'
-        )
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is a number equal to 18.
+  Upon setting :attr to "19", expected the Example to be invalid, but it
+  was valid instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -547,14 +595,20 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'not validating with greater_than_or_equal_to' do
       it 'rejects since it does not disallow numbers that are less than the value' do
         record = build_record_validating_numericality
+
         assertion = lambda do
-          expect(record).
-            to validate_numericality.
+          expect(record).to validate_numericality.
             is_greater_than_or_equal_to(18)
         end
-        expect(&assertion).to fail_with_message_including(
-          'Expected errors to include "must be greater than or equal to 18"'
-        )
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is a number greater than or
+equal to 18.
+  Upon setting :attr to "17", expected the Example to be invalid, but it
+  was valid instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -611,14 +665,18 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'and not validating with greater_than' do
       it 'rejects since it does not disallow numbers that are less than or equal to the value' do
         record = build_record_validating_numericality
+
         assertion = lambda do
-          expect(record).
-            to validate_numericality.
-            is_greater_than(18)
+          expect(record).to validate_numericality.is_greater_than(18)
         end
-        expect(&assertion).to fail_with_message_including(
-          'Expected errors to include "must be greater than 18"'
-        )
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is a number greater than 18.
+  Upon setting :attr to "18", expected the Example to be invalid, but it
+  was valid instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -632,9 +690,22 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     end
 
     context 'and validating with a different message' do
-      it 'rejects' do
+      it 'rejects with the correct failure message' do
         record = build_record_validating_numericality(message: 'custom')
-        expect(record).not_to validate_numericality.with_message(/wrong/)
+
+        assertion = lambda do
+          expect(record).to validate_numericality.with_message(/wrong/)
+        end
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is a number, producing a
+custom message on failure.
+  Upon setting :attr to "abcd", expected the Example to be invalid and
+  for the validation on :attr to match /wrong/. The record *was*
+  invalid, but the validation error was "custom" instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
 
@@ -642,6 +713,25 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
       it 'ignores the qualifier' do
         record = build_record_validating_numericality
         expect(record).to validate_numericality.with_message(nil)
+      end
+    end
+
+    context 'and the validation is missing from the model' do
+      it 'rejects with the correct failure message' do
+        record = build_record_validating_numericality(message: 'custom')
+
+        assertion = lambda do
+          expect(record).to validate_numericality.with_message(/wrong/)
+        end
+
+        message = <<-MESSAGE
+Example did not properly ensure that :attr is a number, producing a
+custom message on failure.
+  Upon setting :attr to "abcd", expected the Example to be invalid, but
+  it was valid instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -657,12 +747,19 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
     context 'and not validating strictly' do
       it 'rejects since ActiveModel::StrictValidationFailed is never raised' do
         record = build_record_validating_numericality(attribute_name: :attr)
+
         assertion = lambda do
           expect(record).to validate_numericality_of(:attr).strict
         end
-        expect(&assertion).to fail_with_message_including(
-          'Expected exception to include "Attr is not a number"'
-        )
+
+        message = <<-MESSAGE
+Example did not properly strictly validate that :attr is a number.
+  Upon setting :attr to "abcd", expected the Example to be invalid and
+  to raise a StrictValidationFailed exception, but it produced a
+  validation error instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
   end
@@ -684,12 +781,18 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
   context 'not qualified with on but validating with on' do
     it 'rejects since the validation never runs' do
       record = build_record_validating_numericality(on: :customizable)
+
       assertion = lambda do
         expect(record).to validate_numericality
       end
-      expect(&assertion).to fail_with_message_including(
-        'Expected errors to include "is not a number"'
-      )
+
+      message = <<-MESSAGE
+Example did not properly validate that :attr is a number.
+  Upon setting :attr to "abcd", expected the Example to be invalid,
+  but it was valid instead.
+      MESSAGE
+
+      expect(&assertion).to fail_with_message(message)
     end
   end
 

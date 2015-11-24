@@ -36,7 +36,7 @@ module Shoulda
           end
 
           def allowed_type_name
-            raise NotImplementedError
+            'number'
           end
 
           def allowed_type_adjective
