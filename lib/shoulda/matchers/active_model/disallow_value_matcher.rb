@@ -7,7 +7,7 @@ module Shoulda
       class DisallowValueMatcher
         extend Forwardable
 
-        def_delegators :allow_matcher, :_after_setting_value
+        def_delegators :allow_matcher, :_after_setting_value, :description
 
         def initialize(value)
           @allow_matcher = AllowValueMatcher.new(value)

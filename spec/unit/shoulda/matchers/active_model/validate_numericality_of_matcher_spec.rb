@@ -171,9 +171,9 @@ describe Shoulda::Matchers::ActiveModel::ValidateNumericalityOfMatcher, type: :m
         assertion = -> { expect(record).to validate_numericality }
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is a number.
-  Upon setting :attr to "abcd", expected the Example to be invalid, but
-  it was valid instead.
+Example did not properly validate that :attr looks like a number.
+  After setting :attr to "abcd", the matcher expected the Example to be
+  invalid, but it was valid instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -198,10 +198,13 @@ Example did not properly ensure that :attr is a number.
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is a number, allowing nil.
-  Upon setting :attr to nil, expected the Example to be valid, but
-  it was invalid instead (validation errors on :attr included "is not a
-  number" when they were not supposed to).
+Example did not properly validate that :attr looks like a number,
+allowing it to be nil.
+  In checking that Example allows :attr to be nil, after setting :attr
+  to nil, the matcher expected the Example to be valid, but it was
+  invalid instead, producing these validation errors:
+
+  * attr: ["is not a number"]
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -226,9 +229,9 @@ Example did not properly ensure that :attr is a number, allowing nil.
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is an integer.
-  Upon setting :attr to "0.1", expected the Example to be invalid, but
-  it was valid instead.
+Example did not properly validate that :attr looks like an integer.
+  After setting :attr to "0.1", the matcher expected the Example to be
+  invalid, but it was valid instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -286,9 +289,9 @@ Example did not properly ensure that :attr is an integer.
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is an odd number.
-  Upon setting :attr to "2", expected the Example to be invalid, but it
-  was valid instead.
+Example did not properly validate that :attr looks like an odd number.
+  After setting :attr to "2", the matcher expected the Example to be
+  invalid, but it was valid instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -346,9 +349,9 @@ Example did not properly ensure that :attr is an odd number.
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is an even number.
-  Upon setting :attr to "1", expected the Example to be invalid, but it
-  was valid instead.
+Example did not properly validate that :attr looks like an even number.
+  After setting :attr to "1", the matcher expected the Example to be
+  invalid, but it was valid instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -408,10 +411,10 @@ Example did not properly ensure that :attr is an even number.
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is a number less than or
-equal to 18.
-  Upon setting :attr to "19", expected the Example to be invalid, but it
-  was valid instead.
+Example did not properly validate that :attr looks like a number less
+than or equal to 18.
+  After setting :attr to "19", the matcher expected the Example to be
+  invalid, but it was valid instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -471,9 +474,10 @@ equal to 18.
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is a number less than 18.
-  Upon setting :attr to "19", expected the Example to be invalid, but it
-  was valid instead.
+Example did not properly validate that :attr looks like a number less
+than 18.
+  After setting :attr to "19", the matcher expected the Example to be
+  invalid, but it was valid instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -531,9 +535,10 @@ Example did not properly ensure that :attr is a number less than 18.
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is a number equal to 18.
-  Upon setting :attr to "19", expected the Example to be invalid, but it
-  was valid instead.
+Example did not properly validate that :attr looks like a number equal
+to 18.
+  After setting :attr to "19", the matcher expected the Example to be
+  invalid, but it was valid instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -602,10 +607,10 @@ Example did not properly ensure that :attr is a number equal to 18.
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is a number greater than or
-equal to 18.
-  Upon setting :attr to "17", expected the Example to be invalid, but it
-  was valid instead.
+Example did not properly validate that :attr looks like a number greater
+than or equal to 18.
+  After setting :attr to "17", the matcher expected the Example to be
+  invalid, but it was valid instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -671,9 +676,10 @@ equal to 18.
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is a number greater than 18.
-  Upon setting :attr to "18", expected the Example to be invalid, but it
-  was valid instead.
+Example did not properly validate that :attr looks like a number greater
+than 18.
+  After setting :attr to "18", the matcher expected the Example to be
+  invalid, but it was valid instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -698,11 +704,14 @@ Example did not properly ensure that :attr is a number greater than 18.
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is a number, producing a
-custom message on failure.
-  Upon setting :attr to "abcd", expected the Example to be invalid and
-  for the validation on :attr to match /wrong/. The record *was*
-  invalid, but the validation error was "custom" instead.
+Example did not properly validate that :attr looks like a number,
+producing a custom validation error on failure.
+  After setting :attr to "abcd", the matcher expected the Example to be
+  invalid and to produce the validation error matching /wrong/ on :attr.
+  The record was indeed invalid, but it produced these validation errors
+  instead:
+
+  * attr: ["custom"]
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -718,17 +727,17 @@ custom message on failure.
 
     context 'and the validation is missing from the model' do
       it 'rejects with the correct failure message' do
-        record = build_record_validating_numericality(message: 'custom')
+        model = define_model_validating_nothing
 
         assertion = lambda do
-          expect(record).to validate_numericality.with_message(/wrong/)
+          expect(model.new).to validate_numericality.with_message(/wrong/)
         end
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is a number, producing a
-custom message on failure.
-  Upon setting :attr to "abcd", expected the Example to be invalid, but
-  it was valid instead.
+Example did not properly validate that :attr looks like a number,
+producing a custom validation error on failure.
+  After setting :attr to "abcd", the matcher expected the Example to be
+  invalid, but it was valid instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -753,10 +762,11 @@ custom message on failure.
         end
 
         message = <<-MESSAGE
-Example did not properly strictly validate that :attr is a number.
-  Upon setting :attr to "abcd", expected the Example to be invalid and
-  to raise a StrictValidationFailed exception, but it produced a
-  validation error instead.
+Example did not properly validate that :attr looks like a number,
+raising a validation exception on failure.
+  After setting :attr to "abcd", the matcher expected the Example to be
+  invalid and to raise a validation exception, but the record produced
+  validation errors instead.
         MESSAGE
 
         expect(&assertion).to fail_with_message(message)
@@ -787,9 +797,9 @@ Example did not properly strictly validate that :attr is a number.
       end
 
       message = <<-MESSAGE
-Example did not properly validate that :attr is a number.
-  Upon setting :attr to "abcd", expected the Example to be invalid,
-  but it was valid instead.
+Example did not properly validate that :attr looks like a number.
+  After setting :attr to "abcd", the matcher expected the Example to be
+  invalid, but it was valid instead.
       MESSAGE
 
       expect(&assertion).to fail_with_message(message)
@@ -815,33 +825,51 @@ Example did not properly validate that :attr is a number.
           even: true,
           greater_than: 18
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             only_integer.
             is_greater_than(18)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be an integer" when attr is set to "0.1",
-          got errors:
-          * "must be greater than 18" (attribute: attr, value: "0.1")
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an integer
+greater than 18.
+  In checking that Example disallows :attr from being a decimal number,
+  after setting :attr to "0.1", the matcher expected the Example to be
+  invalid and to produce the validation error "must be an integer" on
+  :attr. The record was indeed invalid, but it produced these validation
+  errors instead:
+
+  * attr: ["must be greater than 18"]
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
       specify 'such as not validating only_integer but testing that only_integer is validated' do
         record = build_record_validating_numericality(greater_than: 18)
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             only_integer.
             is_greater_than(18)
         end
+
         message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be an integer" when attr is set to "0.1",
-          got errors:
-          * "must be greater than 18" (attribute: attr, value: "0.1")
+Example did not properly validate that :attr looks like an integer
+greater than 18.
+  In checking that Example disallows :attr from being a decimal number,
+  after setting :attr to "0.1", the matcher expected the Example to be
+  invalid and to produce the validation error "must be an integer" on
+  :attr. The record was indeed invalid, but it produced these validation
+  errors instead:
+
+  * attr: ["must be greater than 18"]
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -850,16 +878,22 @@ Example did not properly validate that :attr is a number.
           even: true,
           greater_than_or_equal_to: 18
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             even.
             is_greater_than(18)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be greater than 18" when attr is set to "18",
-          got no errors
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an even number
+greater than 18.
+  In checking that Example disallows :attr from being a number that is
+  not greater than 18, after setting :attr to "18", the matcher expected
+  the Example to be invalid, but it was valid instead.
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -868,17 +902,26 @@ Example did not properly validate that :attr is a number.
           odd: true,
           greater_than: 18
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             even.
             is_greater_than(18)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be even" when attr is set to "1",
-          got errors:
-          * "must be greater than 18" (attribute: attr, value: "1")
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an even number
+greater than 18.
+  In checking that Example disallows :attr from being an odd number,
+  after setting :attr to "1", the matcher expected the Example to be
+  invalid and to produce the validation error "must be even" on :attr.
+  The record was indeed invalid, but it produced these validation errors
+  instead:
+
+  * attr: ["must be greater than 18"]
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -887,16 +930,22 @@ Example did not properly validate that :attr is a number.
           odd: true,
           greater_than_or_equal_to: 99
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             odd.
             is_less_than_or_equal_to(99)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be less than or equal to 99" when attr is set to "101",
-          got no errors
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an odd number
+less than or equal to 99.
+  In checking that Example disallows :attr from being a number that is
+  not less than or equal to 99, after setting :attr to "101", the
+  matcher expected the Example to be invalid, but it was valid instead.
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -906,6 +955,7 @@ Example did not properly validate that :attr is a number.
           greater_than_or_equal_to: 18,
           less_than: 99
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
@@ -913,10 +963,15 @@ Example did not properly validate that :attr is a number.
             is_greater_than(18).
             is_less_than(99)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be greater than 18" when attr is set to "18",
-          got no errors
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an integer
+greater than 18 and less than 99.
+  In checking that Example disallows :attr from being a number that is
+  not greater than 18, after setting :attr to "18", the matcher expected
+  the Example to be invalid, but it was valid instead.
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
     end
@@ -927,17 +982,27 @@ Example did not properly validate that :attr is a number.
           only_integer: true,
           greater_than: 19
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             only_integer.
             is_greater_than(18)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be greater than 18" when attr is set to "18",
-          got errors:
-          * "must be greater than 19" (attribute: attr, value: "19")
+
+        # why is value "19" here?
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an integer
+greater than 18.
+  In checking that Example disallows :attr from being a number that is
+  not greater than 18, after setting :attr to "18", the matcher expected
+  the Example to be invalid and to produce the validation error "must be
+  greater than 18" on :attr. The record was indeed invalid, but it
+  produced these validation errors instead:
+
+  * attr: ["must be greater than 19"]
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -946,16 +1011,22 @@ Example did not properly validate that :attr is a number.
           only_integer: true,
           greater_than: 17
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             only_integer.
             is_greater_than(18)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be greater than 18" when attr is set to "18",
-          got no errors
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an integer
+greater than 18.
+  In checking that Example disallows :attr from being a number that is
+  not greater than 18, after setting :attr to "18", the matcher expected
+  the Example to be invalid, but it was valid instead.
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -964,17 +1035,27 @@ Example did not properly validate that :attr is a number.
           even: true,
           greater_than: 20
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             even.
             is_greater_than(18)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be greater than 18" when attr is set to "18",
-          got errors:
-          * "must be greater than 20" (attribute: attr, value: "20")
+
+         # why is value "20" here?
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an even number
+greater than 18.
+  In checking that Example disallows :attr from being a number that is
+  not greater than 18, after setting :attr to "18", the matcher expected
+  the Example to be invalid and to produce the validation error "must be
+  greater than 18" on :attr. The record was indeed invalid, but it
+  produced these validation errors instead:
+
+  * attr: ["must be greater than 20"]
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -983,16 +1064,22 @@ Example did not properly validate that :attr is a number.
           even: true,
           greater_than: 16
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             even.
             is_greater_than(18)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be greater than 18" when attr is set to "18",
-          got no errors
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an even number
+greater than 18.
+  In checking that Example disallows :attr from being a number that is
+  not greater than 18, after setting :attr to "18", the matcher expected
+  the Example to be invalid, but it was valid instead.
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -1001,16 +1088,22 @@ Example did not properly validate that :attr is a number.
           odd: true,
           less_than_or_equal_to: 101
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             odd.
             is_less_than_or_equal_to(99)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be less than or equal to 99" when attr is set to "101",
-          got no errors
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an odd number
+less than or equal to 99.
+  In checking that Example disallows :attr from being a number that is
+  not less than or equal to 99, after setting :attr to "101", the
+  matcher expected the Example to be invalid, but it was valid instead.
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -1019,17 +1112,27 @@ Example did not properly validate that :attr is a number.
           odd: true,
           less_than_or_equal_to: 97
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
             odd.
             is_less_than_or_equal_to(99)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be less than or equal to 99" when attr is set to "101",
-          got errors:
-          * "must be less than or equal to 97" (attribute: attr, value: "101")
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an odd number
+less than or equal to 99.
+  In checking that Example disallows :attr from being a number that is
+  not less than or equal to 99, after setting :attr to "101", the
+  matcher expected the Example to be invalid and to produce the
+  validation error "must be less than or equal to 99" on :attr. The
+  record was indeed invalid, but it produced these validation errors
+  instead:
+
+  * attr: ["must be less than or equal to 97"]
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -1039,6 +1142,7 @@ Example did not properly validate that :attr is a number.
           greater_than: 19,
           less_than: 99
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
@@ -1046,11 +1150,20 @@ Example did not properly validate that :attr is a number.
             is_greater_than(18).
             is_less_than(99)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be greater than 18" when attr is set to "18",
-          got errors:
-          * "must be greater than 19" (attribute: attr, value: "19")
+
+        # why is value "19" here?
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an integer
+greater than 18 and less than 99.
+  In checking that Example disallows :attr from being a number that is
+  not greater than 18, after setting :attr to "18", the matcher expected
+  the Example to be invalid and to produce the validation error "must be
+  greater than 18" on :attr. The record was indeed invalid, but it
+  produced these validation errors instead:
+
+  * attr: ["must be greater than 19"]
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
 
@@ -1060,6 +1173,7 @@ Example did not properly validate that :attr is a number.
           greater_than: 18,
           less_than: 100
         )
+
         assertion = lambda do
           expect(record).
             to validate_numericality.
@@ -1067,11 +1181,19 @@ Example did not properly validate that :attr is a number.
             is_greater_than(18).
             is_less_than(99)
         end
-        message = <<-MESSAGE.strip_heredoc
-          Expected errors to include "must be less than 99" when attr is set to "100",
-          got errors:
-          * "must be less than 100" (attribute: attr, value: "100")
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr looks like an integer
+greater than 18 and less than 99.
+  In checking that Example disallows :attr from being a number that is
+  not less than 99, after setting :attr to "100", the matcher expected
+  the Example to be invalid and to produce the validation error "must be
+  less than 99" on :attr. The record was indeed invalid, but it produced
+  these validation errors instead:
+
+  * attr: ["must be less than 100"]
         MESSAGE
+
         expect(&assertion).to fail_with_message(message)
       end
     end
@@ -1136,14 +1258,18 @@ Example did not properly validate that :attr is a number.
     context 'qualified with nothing' do
       it 'describes that it allows numbers' do
         matcher = validate_numericality_of(:attr)
-        expect(matcher.description).to eq 'only allow numbers for attr'
+        expect(matcher.description).to eq(
+          'validate that :attr looks like a number'
+        )
       end
     end
 
     context 'qualified with only_integer' do
       it 'describes that it allows integers' do
         matcher = validate_numericality_of(:attr).only_integer
-        expect(matcher.description).to eq 'only allow integers for attr'
+        expect(matcher.description).to eq(
+          'validate that :attr looks like an integer'
+        )
       end
     end
 
@@ -1151,8 +1277,9 @@ Example did not properly validate that :attr is a number.
       context "qualified with #{qualifier[:name]}" do
         it "describes that it allows #{qualifier[:name]} numbers" do
           matcher = validate_numericality_of(:attr).__send__(qualifier[:name])
-          expect(matcher.description).
-            to eq "only allow #{qualifier[:name]} numbers for attr"
+          expect(matcher.description).to eq(
+            "validate that :attr looks like an #{qualifier[:name]} number"
+          )
         end
       end
     end
@@ -1166,7 +1293,7 @@ Example did not properly validate that :attr is a number.
             __send__(qualifier[:name], 18)
 
           expect(matcher.description).to eq(
-            "only allow numbers for attr which are #{comparison_phrase} 18"
+            "validate that :attr looks like a number #{comparison_phrase} 18"
           )
         end
       end
@@ -1179,7 +1306,7 @@ Example did not properly validate that :attr is a number.
           is_greater_than_or_equal_to(18)
 
         expect(matcher.description).to eq(
-          'only allow odd numbers for attr which are greater than or equal to 18'
+          'validate that :attr looks like an odd number greater than or equal to 18'
         )
       end
     end
@@ -1192,7 +1319,7 @@ Example did not properly validate that :attr is a number.
           is_less_than_or_equal_to(100)
 
         expect(matcher.description).to eq(
-          'only allow integers for attr which are greater than 18 and less than or equal to 100'
+          'validate that :attr looks like an integer greater than 18 and less than or equal to 100'
         )
       end
     end
@@ -1201,7 +1328,7 @@ Example did not properly validate that :attr is a number.
       it 'describes that it relies upon a strict validation' do
         matcher = validate_numericality_of(:attr).strict
         expect(matcher.description).to eq(
-          'only allow numbers for attr, strictly'
+          'validate that :attr looks like a number, raising a validation exception on failure'
         )
       end
 
@@ -1209,7 +1336,7 @@ Example did not properly validate that :attr is a number.
         it 'places the comparison description after "strictly"' do
           matcher = validate_numericality_of(:attr).is_less_than(18).strict
           expect(matcher.description).to eq(
-            'only allow numbers for attr, strictly, which are less than 18'
+            'validate that :attr looks like a number less than 18, raising a validation exception on failure'
           )
         end
       end

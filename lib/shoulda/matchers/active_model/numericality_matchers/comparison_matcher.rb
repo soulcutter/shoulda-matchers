@@ -24,13 +24,15 @@ module Shoulda
           end
 
           def description
-            message = "validate that #{@attribute} is #{comparison_expectation} #{@value}"
+            description = ''
 
             if @strict
-              message << " strictly"
+              description << ' strictly'
             end
 
-            message
+            description +
+              "disallow :#{attribute} from being a number that is not " +
+              "#{comparison_expectation} #{@value}"
           end
 
           def for(attribute)

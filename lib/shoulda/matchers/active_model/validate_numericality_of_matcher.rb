@@ -314,6 +314,8 @@ module Shoulda
           @attribute = attribute
           @submatchers = []
           @diff_to_compare = DEFAULT_DIFF_TO_COMPARE
+          @using_custom_message = false
+          @allow_nil = false
           @strict = false
           @allowed_type_adjective = nil
           @allowed_type_name = 'number'
@@ -335,6 +337,7 @@ module Shoulda
         end
 
         def allow_nil
+          @allow_nil = true
           prepare_submatcher(
             AllowValueMatcher.new(nil)
               .for(@attribute)
@@ -383,6 +386,7 @@ module Shoulda
         end
 
         def with_message(message)
+          @using_custom_message = true
           @submatchers.each { |matcher| matcher.with_message(message) }
           self
         end
@@ -394,6 +398,7 @@ module Shoulda
 
         def matches?(subject)
           @subject = subject
+          @number_of_submatchers = @submatchers.size
 
           if given_numeric_column?
             remove_disallow_value_matcher
@@ -411,29 +416,53 @@ module Shoulda
         end
 
         def description
-          description_parts = [
-            "ensure that :#{@attribute} is " +
-            Shoulda::Matchers::Util.a_or_an(full_allowed_type)
-          ]
+          description = ''
+
+          description << "validate that :#{@attribute} looks like "
+          description << Shoulda::Matchers::Util.a_or_an(full_allowed_type)
 
           if comparison_descriptions.present?
-            description_parts << comparison_descriptions
+            description << ' ' + comparison_descriptions
+          end
+
+          if @allow_nil
+            description << ', allowing it to be nil'
           end
 
           if @strict
-            description_parts.insert(1, 'strictly')
-            description_parts.join(', ')
-          else
-            description_parts.join(' ')
+            description << ', raising a validation exception'
+
+            if @using_custom_message
+              description << ' with a custom message'
+            end
+
+            description << ' on failure'
+          elsif @using_custom_message
+            description << ', producing a custom validation error on failure'
           end
+
+          description
         end
 
         def failure_message
           "#{overall_failure_message}".tap do |message|
             failing_submatchers.each do |submatcher|
+              if number_of_submatchers_for_failure_message > 1
+                submatcher_description = submatcher.description.
+                  sub(/\bvalidate that\b/, 'validates').
+                  sub(/\bdisallow\b/, 'disallows').
+                  sub(/\ballow\b/, 'allows')
+                submatcher_message =
+                  "In checking that #{model.name} #{submatcher_description}, " +
+                  submatcher.failure_message[0].downcase +
+                  submatcher.failure_message[1..-1]
+              else
+                submatcher_message = submatcher.failure_message
+              end
+
               message << "\n"
               message << Shoulda::Matchers.word_wrap(
-                submatcher.failure_message,
+                submatcher_message,
                 indent: 2
               )
             end
@@ -443,7 +472,7 @@ module Shoulda
         def failure_message_when_negated
           "#{overall_failure_message_when_negated}".tap do |message|
             if submatcher_failure_message_when_negated.present?
-              raise "well that's weird"
+              raise "hmm, this needs to be implemented."
               message << "\n"
               message << Shoulda::Matchers.word_wrap(
                 submatcher_failure_message_when_negated,
@@ -458,6 +487,10 @@ module Shoulda
         end
 
         private
+
+        def strict?
+          @strict
+        end
 
         def model
           @subject.class
@@ -517,6 +550,20 @@ module Shoulda
           end
 
           @submatchers << submatcher
+        end
+
+        def number_of_submatchers_for_failure_message
+          if has_been_qualified?
+            @submatchers.size - 1
+          else
+            @submatchers.size
+          end
+        end
+
+        def has_been_qualified?
+          @submatchers.any? do |submatcher|
+            submatcher.class.parent == NumericalityMatchers
+          end
         end
 
         def update_diff_to_compare(matcher)

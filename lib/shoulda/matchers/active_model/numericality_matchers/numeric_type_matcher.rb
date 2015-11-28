@@ -21,7 +21,10 @@ module Shoulda
           end
 
           def with_message(message)
-            @message = message
+            if message
+              @message = message
+            end
+
             self
           end
 

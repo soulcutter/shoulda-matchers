@@ -6,6 +6,17 @@ module Shoulda
         class OddNumberMatcher < NumericTypeMatcher
           NON_ODD_NUMBER_VALUE = 2
 
+          def description
+            description = ''
+
+            if @strict
+              description << 'strictly '
+            end
+
+            description +
+              "disallow :#{attribute} from being an even number"
+          end
+
           def allowed_type_adjective
             'odd'
           end

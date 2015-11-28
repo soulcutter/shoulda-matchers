@@ -358,42 +358,43 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         attr_accessor :options
 
         def initialize(*values)
-          self.values_to_match = values
-          self.options = {}
-          self.after_setting_value_callback = -> {}
-          self.validator = Validator.new
+          @values_to_set = values
+          @options = {}
+          @after_setting_value_callback = -> {}
           @ignoring_interference_by_writer = false
+          @strict = false
+          @context = nil
         end
 
         def for(attribute)
-          self.attribute_to_set = attribute
-          self.attribute_to_check_message_against = attribute
+          @attribute_to_set = attribute
+          @attribute_to_check_message_against = attribute
           self
         end
 
         def on(context)
           if context.present?
-            validator.context = context
+            @context = context
           end
 
           self
         end
 
-        def with_message(message, options={})
+        def with_message(message, given_options = {})
           if message.present?
-            self.options[:expected_message] = message
-            self.options[:expected_message_values] = options.fetch(:values, {})
+            options[:expected_message] = message
+            options[:expected_message_values] = given_options.fetch(:values, {})
 
             if options.key?(:against)
-              self.attribute_to_check_message_against = options[:against]
+              @attribute_to_check_message_against = given_options[:against]
             end
           end
 
           self
         end
 
-        def strict(strictness = true)
-          validator.strict = strictness
+        def strict(strict = true)
+          @strict = strict
           self
         end
 
@@ -403,66 +404,104 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         end
 
         def _after_setting_value(&callback)
-          self.after_setting_value_callback = callback
+          @after_setting_value_callback = callback
         end
 
         def matches?(instance)
-          self.instance = instance
-          values_to_match.all? { |value| value_matches?(value) }
+          @instance = instance
+          first_failing_value_and_validator.nil?
         end
 
         def does_not_match?(instance)
-          self.instance = instance
-          values_to_match.all? { |value| !value_matches?(value) }
+          @instance = instance
+          first_passing_value_and_validator.nil?
         end
 
         def failure_message
-          "Expected #{model.name} to #{primary_expectation},\n" +
-            "but it #{primary_actuality} " +
-            "(#{secondary_expectation_when_negated})." +
-          secondary_actuality
+          "After setting :#{attribute_to_set} to #{value.inspect}," +
+            " the matcher expected the #{model.name} to be valid," +
+            " but it was invalid instead," +
+            " producing these validation errors:\n\n" +
+            first_failing_validator.pretty_error_messages(instance)
         end
 
         def failure_message_when_negated
-          "Expected #{model.name} not to #{primary_expectation},\n" +
-            "but it #{primary_actuality_when_negated} " +
-            "(#{secondary_expectation})."
+          validator = first_passing_validator
+          message =
+            "After setting :#{attribute_to_set} to #{value.inspect}," +
+            " the matcher expected the #{model.name} to be invalid"
+
+          if validator.type_of_message_matched?
+            if validator.has_messages?
+              message << ' and to produce'
+
+              if validator.captured_validation_exception?
+                message << ' a validation exception with message'
+              else
+                message << ' the validation error'
+              end
+
+              if expected_message.is_a?(Regexp)
+                message << ' matching'
+              end
+
+              message << " #{expected_message.inspect}"
+              message << " on :#{attribute_to_check_message_against}."
+              message << ' The record was indeed invalid, but'
+
+              if validator.captured_validation_exception?
+                message << ' the exception message was '
+                message << validator.validation_exception_message.inspect
+                message << ' instead.'
+              else
+                message << " it produced these validation errors instead:\n\n"
+                message << validator.all_formatted_validation_error_messages
+              end
+            else
+              message << ', but it was valid instead.'
+            end
+          else
+            message << ' and to raise a validation exception, but the record'
+            message << ' produced validation errors instead.'
+          end
+
+          message
         end
 
         def description
-          "be valid with :#{attribute_to_set} set to #{allowed_values}"
+          "allow :#{attribute_to_set} to be #{inspected_values_to_set}"
         end
 
         protected
 
-        attr_reader :instance, :attribute_to_check_message_against
-        attr_accessor :values_to_match, :attribute_to_set, :value,
-          :matched_error, :after_setting_value_callback, :validator
+        attr_reader(
+          :after_setting_value_callback,
+          :attribute_to_check_message_against,
+          :attribute_to_set,
+          :context,
+          :instance,
+          :value,
+          :values_to_set,
+        )
 
         private
 
+        def strict?
+          @strict
+        end
+
         def model
           instance.class
-        end
-
-        def instance=(instance)
-          @instance = instance
-          validator.record = instance
-        end
-
-        def attribute_to_check_message_against=(attribute)
-          @attribute_to_check_message_against = attribute
-          validator.attribute = attribute
         end
 
         def ignoring_interference_by_writer?
           @ignoring_interference_by_writer
         end
 
-        def value_matches?(value)
-          self.value = value
+        def value_matches?(value, validator)
+          @value = value
           set_attribute(value)
-          !(errors_match? || any_range_error_occurred?)
+          !(errors_match?(validator) || any_range_error_occurred?(validator))
         end
 
         def set_attribute(value)
@@ -484,74 +523,60 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           end
         end
 
-        def errors_match?
-          has_messages? && errors_for_attribute_match?
+        def errors_match?(validator)
+          validator.has_messages? &&
+            validator.type_of_message_matched? &&
+            errors_for_attribute_match?(validator)
         end
 
-        def has_messages?
-          validator.has_messages?
+        def errors_for_attribute_match?(validator)
+          matched_errors(validator).compact.any?
         end
 
-        def errors_for_attribute_match?
+        def matched_errors(validator)
           if expected_message
-            self.matched_error = errors_match_regexp? || errors_match_string?
+            validator.messages.grep(expected_message)
           else
-            errors_for_attribute.compact.any?
+            validator.messages
           end
         end
 
-        def errors_for_attribute
-          validator.formatted_messages
-        end
-
-        def errors_match_regexp?
-          if Regexp === expected_message
-            errors_for_attribute.detect { |e| e =~ expected_message }
-          end
-        end
-
-        def errors_match_string?
-          if errors_for_attribute.include?(expected_message)
-            expected_message
-          end
-        end
-
-        def any_range_error_occurred?
+        def any_range_error_occurred?(validator)
           validator.captured_range_error?
         end
 
-        def primary_expectation
-          description
-        end
+        # def primary_expectation
+          # description
+        # end
 
-        def primary_actuality
-          "was not valid"
-        end
+        # def primary_actuality
+          # "was not valid"
+        # end
 
-        def primary_actuality_when_negated
-          "was valid"
-        end
+        # def primary_actuality_when_negated
+          # "was valid"
+        # end
 
-        def secondary_expectation
-          validator.expected_messages_description(expected_message)
-        end
+        # def secondary_expectation
+          # validator.expected_messages_description(expected_message)
+        # end
 
-        def secondary_expectation_when_negated
-          validator.expected_messages_description_when_negated(expected_message)
-        end
+        # def secondary_expectation_when_negated
+          # validator.expected_messages_description_when_negated(expected_message)
+        # end
 
-        def secondary_actuality
-          validator.actual_messages_description
-        end
+        # def secondary_actuality
+          # validator.actual_messages_description
+        # end
 
-        def allowed_values
-          if values_to_match.size > 1
-            "any of " + values_to_match.to_sentence(
+        def inspected_values_to_set
+          if values_to_set.size > 1
+            values_to_set.map(&:inspect).to_sentence(
               two_words_connector: " or ",
               last_word_connector: ", or"
             )
           else
-            values_to_match.first.inspect
+            values_to_set.first.inspect
           end
         end
 
@@ -566,7 +591,11 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         end
 
         def default_expected_message
-          validator.expected_message_from(default_attribute_message)
+          if strict?
+            "#{human_attribute_name} #{default_attribute_message}"
+          else
+            default_attribute_message
+          end
         end
 
         def default_attribute_message
@@ -586,8 +615,50 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           defaults.merge(options[:expected_message_values])
         end
 
+        def values_and_validators
+          @_values_and_validators ||= values_to_set.map do |value|
+            [value, build_validator]
+          end
+        end
+
+        def build_validator
+          validator = Validator.new(
+            instance,
+            attribute_to_check_message_against
+          )
+          validator.context = context
+          validator.strict = strict?
+          validator
+        end
+
+        def first_failing_value_and_validator
+          @_first_failing_value_and_validator ||=
+            values_and_validators.detect do |value, validator|
+              !value_matches?(value, validator)
+            end
+        end
+
+        def first_failing_validator
+          first_failing_value_and_validator[1]
+        end
+
+        def first_passing_value_and_validator
+          @_first_passing_value_and_validator ||=
+            values_and_validators.detect do |value, validator|
+              value_matches?(value, validator)
+            end
+        end
+
+        def first_passing_validator
+          first_passing_value_and_validator[1]
+        end
+
         def model_name
           instance.class.to_s.underscore
+        end
+
+        def human_attribute_name
+          instance.class.human_attribute_name(attribute_to_check_message_against)
         end
       end
     end
