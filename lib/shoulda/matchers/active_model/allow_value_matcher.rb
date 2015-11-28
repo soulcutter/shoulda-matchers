@@ -385,7 +385,7 @@ https://github.com/thoughtbot/shoulda-matchers/issues
             options[:expected_message] = message
             options[:expected_message_values] = given_options.fetch(:values, {})
 
-            if options.key?(:against)
+            if given_options.key?(:against)
               @attribute_to_check_message_against = given_options[:against]
             end
           end
@@ -418,11 +418,22 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         end
 
         def failure_message
-          "After setting :#{attribute_to_set} to #{value.inspect}," +
+          validator = first_failing_validator
+
+          message = "After setting :#{attribute_to_set} to #{value.inspect}," +
             " the matcher expected the #{model.name} to be valid," +
-            " but it was invalid instead," +
-            " producing these validation errors:\n\n" +
-            first_failing_validator.pretty_error_messages(instance)
+            ' but it was invalid instead,'
+
+          if validator.captured_validation_exception?
+            message << ' raising a validation exception with the message '
+            message << validator.validation_exception_message.inspect
+            message << '.'
+          else
+            message << " producing these validation errors:\n\n"
+            message << validator.all_formatted_validation_error_messages
+          end
+
+          Shoulda::Matchers.word_wrap(message)
         end
 
         def failure_message_when_negated
@@ -433,12 +444,20 @@ https://github.com/thoughtbot/shoulda-matchers/issues
 
           if validator.type_of_message_matched?
             if validator.has_messages?
-              message << ' and to produce'
+              message << ' and to'
 
               if validator.captured_validation_exception?
-                message << ' a validation exception with message'
+                message << ' raise a validation exception with message'
               else
-                message << ' the validation error'
+                message << ' produce'
+
+                if expected_message.is_a?(Regexp)
+                  message << ' a'
+                else
+                  message << ' the'
+                end
+
+                message << ' validation error'
               end
 
               if expected_message.is_a?(Regexp)
@@ -446,8 +465,12 @@ https://github.com/thoughtbot/shoulda-matchers/issues
               end
 
               message << " #{expected_message.inspect}"
-              message << " on :#{attribute_to_check_message_against}."
-              message << ' The record was indeed invalid, but'
+
+              unless validator.captured_validation_exception?
+                message << " on :#{attribute_to_check_message_against}"
+              end
+
+              message << '. The record was indeed invalid, but'
 
               if validator.captured_validation_exception?
                 message << ' the exception message was '
@@ -465,11 +488,18 @@ https://github.com/thoughtbot/shoulda-matchers/issues
             message << ' produced validation errors instead.'
           end
 
-          message
+          Shoulda::Matchers.word_wrap(message)
         end
 
         def description
-          "allow :#{attribute_to_set} to be #{inspected_values_to_set}"
+          description =
+            "allow :#{attribute_to_set} to be #{inspected_values_to_set}"
+
+          if strict?
+            description << ', raising a validation exception upon failure'
+          end
+
+          description
         end
 
         protected
@@ -501,7 +531,7 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         def value_matches?(value, validator)
           @value = value
           set_attribute(value)
-          !(errors_match?(validator) || any_range_error_occurred?(validator))
+          !errors_match?(validator) && !any_range_error_occurred?(validator)
         end
 
         def set_attribute(value)

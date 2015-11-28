@@ -707,7 +707,7 @@ than 18.
 Example did not properly validate that :attr looks like a number,
 producing a custom validation error on failure.
   After setting :attr to "abcd", the matcher expected the Example to be
-  invalid and to produce the validation error matching /wrong/ on :attr.
+  invalid and to produce a validation error matching /wrong/ on :attr.
   The record was indeed invalid, but it produced these validation errors
   instead:
 
