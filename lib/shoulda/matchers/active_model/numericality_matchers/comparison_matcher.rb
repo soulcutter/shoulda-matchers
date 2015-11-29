@@ -20,13 +20,13 @@ module Shoulda
             @value = value
             @operator = operator
             @message = ERROR_MESSAGES[operator]
-            @strict = false
+            @strict_validation = false
           end
 
           def description
             description = ''
 
-            if @strict
+            if strict_validation?
               description << ' strictly'
             end
 
