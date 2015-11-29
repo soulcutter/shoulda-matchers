@@ -128,7 +128,8 @@ module Shoulda
         end
 
         def description
-          "ensure that :#{@attribute} cannot be empty/falsy"
+          description = "validate that :#{@attribute} cannot be empty/falsy"
+          ValidationMatcher::BuildDescription.call(self, description)
         end
 
         private

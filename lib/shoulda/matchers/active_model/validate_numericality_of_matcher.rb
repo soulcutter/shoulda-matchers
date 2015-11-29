@@ -425,23 +425,7 @@ module Shoulda
             description << ' ' + comparison_descriptions
           end
 
-          if @allow_nil
-            description << ', allowing it to be nil'
-          end
-
-          if @strict
-            description << ', raising a validation exception'
-
-            if @using_custom_message
-              description << ' with a custom message'
-            end
-
-            description << ' on failure'
-          elsif @using_custom_message
-            description << ', producing a custom validation error on failure'
-          end
-
-          description
+          ValidationMatcher::BuildDescription.call(self, description)
         end
 
         def failure_message

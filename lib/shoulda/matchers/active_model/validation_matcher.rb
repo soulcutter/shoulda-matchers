@@ -5,7 +5,7 @@ module Shoulda
       class ValidationMatcher
         def initialize(attribute)
           @attribute = attribute
-          @strict = false
+          @strict_validation = false
           @subject = nil
           @last_submatcher_run = nil
         end
@@ -16,8 +16,12 @@ module Shoulda
         end
 
         def strict
-          @strict = true
+          @strict_validation = true
           self
+        end
+
+        def strict_validation?
+          @strict_validation
         end
 
         def matches?(subject)
@@ -52,10 +56,6 @@ module Shoulda
         protected
 
         attr_reader :attribute, :context, :subject, :last_submatcher_run
-
-        def strict?
-          @strict
-        end
 
         def model
           subject.class
@@ -92,11 +92,15 @@ module Shoulda
         private
 
         def overall_failure_message
-          "#{model.name} did not properly #{description}."
+          Shoulda::Matchers.word_wrap(
+            "#{model.name} did not properly #{description}."
+          )
         end
 
         def overall_failure_message_when_negated
-          "Expected #{model.name} not to #{description}, but it did."
+          Shoulda::Matchers.word_wrap(
+            "Expected #{model.name} not to #{description}, but it did."
+          )
         end
 
         def submatcher_failure_message
@@ -116,7 +120,7 @@ module Shoulda
             for(attribute).
             with_message(message).
             on(context).
-            strict(strict?)
+            strict(strict_validation?)
 
           yield matcher if block_given?
 
