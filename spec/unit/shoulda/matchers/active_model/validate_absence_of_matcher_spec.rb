@@ -42,9 +42,8 @@ describe Shoulda::Matchers::ActiveModel::ValidateAbsenceOfMatcher, type: :model 
 
         message = <<-MESSAGE
 Example did not properly ensure that :attr is empty/falsy.
-  Expected Example not to be valid with :attr set to "an arbitrary
-  value", but it was valid (validation errors on :attr should have
-  been present and have included "must be blank").
+  After setting :attr to "an arbitrary value", the matcher expected the
+  Example to be invalid, but it was valid instead.
         MESSAGE
 
         assertion = lambda do
@@ -69,9 +68,8 @@ Example did not properly ensure that :attr is empty/falsy.
       it 'rejects with the correct failure message' do
         message = <<-MESSAGE
 Example did not properly ensure that :attr is empty/falsy.
-  Expected Example not to be valid with :attr set to "an arbitrary
-  value", but it was valid (validation errors on :attr should have
-  been present and have included "must be blank").
+  After setting :attr to "an arbitrary value", the matcher expected the
+  Example to be invalid, but it was valid instead.
         MESSAGE
 
         assertion = lambda do
@@ -108,9 +106,8 @@ Example did not properly ensure that :attr is empty/falsy.
 
         message = <<-MESSAGE
 Parent did not properly ensure that :children is empty/falsy.
-  Expected Parent not to be valid with :children set to [#<Child id:
-  nil>], but it was valid (validation errors on :children should have
-  been present and have included "must be blank").
+  After setting :children to [#<Child id: nil>], the matcher expected
+  the Parent to be invalid, but it was valid instead.
         MESSAGE
 
         assertion = lambda do
