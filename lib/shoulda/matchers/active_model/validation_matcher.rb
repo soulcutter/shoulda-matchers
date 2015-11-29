@@ -5,9 +5,11 @@ module Shoulda
       class ValidationMatcher
         def initialize(attribute)
           @attribute = attribute
-          @strict_validation = false
+          @expects_strict = false
           @subject = nil
           @last_submatcher_run = nil
+          @expected_message = nil
+          @expects_custom_validation_message = false
         end
 
         def on(context)
@@ -16,17 +18,34 @@ module Shoulda
         end
 
         def strict
-          @strict_validation = true
+          @expects_strict = true
           self
         end
 
-        def strict_validation?
-          @strict_validation
+        def expects_strict?
+          @expects_strict
         end
 
         def matches?(subject)
           @subject = subject
           false
+        end
+
+        def with_message(expected_message)
+          if expected_message
+            @expects_custom_validation_message = true
+            @expected_message = expected_message
+          end
+
+          self
+        end
+
+        def expects_custom_validation_message?
+          @expects_custom_validation_message
+        end
+
+        def description
+          ValidationMatcher::BuildDescription.call(self, simple_description)
         end
 
         def failure_message
@@ -120,7 +139,7 @@ module Shoulda
             for(attribute).
             with_message(message).
             on(context).
-            strict(strict_validation?)
+            strict(expects_strict?)
 
           yield matcher if block_given?
 

@@ -6,10 +6,10 @@ module Shoulda
         class OnlyIntegerMatcher < NumericTypeMatcher
           NON_INTEGER_VALUE = 0.1
 
-          def description
+          def simple_description
             description = ''
 
-            if @strict
+            if expects_strict?
               description << ' strictly'
             end
 

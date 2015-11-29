@@ -7,7 +7,8 @@ module Shoulda
       class DisallowValueMatcher
         extend Forwardable
 
-        def_delegators :allow_matcher, :_after_setting_value, :description
+        def_delegators :allow_matcher, :_after_setting_value,
+          :simple_description, :description
 
         def initialize(value)
           @allow_matcher = AllowValueMatcher.new(value)
@@ -32,6 +33,11 @@ module Shoulda
           self
         end
 
+        def strict(strict = true)
+          allow_matcher.strict(strict)
+          self
+        end
+
         def ignoring_interference_by_writer
           allow_matcher.ignoring_interference_by_writer
           self
@@ -43,11 +49,6 @@ module Shoulda
 
         def failure_message_when_negated
           allow_matcher.failure_message
-        end
-
-        def strict(strictness = true)
-          allow_matcher.strict(strictness)
-          self
         end
 
         protected

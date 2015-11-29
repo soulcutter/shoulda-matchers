@@ -32,19 +32,21 @@ module Shoulda
           def description_clauses_for_qualifiers
             description_clauses = []
 
-            if matcher.try(:allow_nil?)
+            if matcher.try(:expects_to_allow_blank?)
+              description_clauses << 'allowing it to be blank'
+            elsif matcher.try(:expects_to_allow_nil?)
               description_clauses << 'allowing it to be nil'
             end
 
-            if matcher.try(:strict_validation?)
+            if matcher.try(:expects_strict?)
               description_clauses << 'raising a validation exception'
 
-              if matcher.try(:using_custom_message?)
+              if matcher.try(:expects_custom_validation_message?)
                 description_clauses.last << ' with a custom message'
               end
 
               description_clauses.last << ' on failure'
-            elsif matcher.try(:using_custom_message?)
+            elsif matcher.try(:expects_custom_validation_message?)
               description_clauses <<
                 'producing a custom validation error on failure'
             end

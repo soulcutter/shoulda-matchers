@@ -29,7 +29,7 @@ describe Shoulda::Matchers::ActiveModel::AllowValueMatcher, type: :model do
         strict_matcher = allow_value('xyz').for(:attr).strict
 
         expect(strict_matcher.description).to eq(
-          'allow :attr to be "xyz", raising a validation exception upon failure'
+          'allow :attr to be "xyz", raising a validation exception on failure'
         )
       end
     end

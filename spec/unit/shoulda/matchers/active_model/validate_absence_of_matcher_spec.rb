@@ -41,7 +41,7 @@ describe Shoulda::Matchers::ActiveModel::ValidateAbsenceOfMatcher, type: :model 
         record = define_model(:example, attr: :string).new
 
         message = <<-MESSAGE
-Example did not properly ensure that :attr is empty/falsy.
+Example did not properly validate that :attr is empty/falsy.
   After setting :attr to "an arbitrary value", the matcher expected the
   Example to be invalid, but it was valid instead.
         MESSAGE
@@ -67,7 +67,7 @@ Example did not properly ensure that :attr is empty/falsy.
     context 'an ActiveModel class without an absence validation' do
       it 'rejects with the correct failure message' do
         message = <<-MESSAGE
-Example did not properly ensure that :attr is empty/falsy.
+Example did not properly validate that :attr is empty/falsy.
   After setting :attr to "an arbitrary value", the matcher expected the
   Example to be invalid, but it was valid instead.
         MESSAGE
@@ -105,7 +105,7 @@ Example did not properly ensure that :attr is empty/falsy.
         model = having_and_belonging_to_many(:children, absence: false)
 
         message = <<-MESSAGE
-Parent did not properly ensure that :children is empty/falsy.
+Parent did not properly validate that :children is empty/falsy.
   After setting :children to [#<Child id: nil>], the matcher expected
   the Parent to be invalid, but it was valid instead.
         MESSAGE

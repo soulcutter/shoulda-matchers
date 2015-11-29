@@ -78,20 +78,18 @@ module Shoulda
 
       # @private
       class ValidateAbsenceOfMatcher < ValidationMatcher
-        def with_message(message)
-          @expected_message = message
-          self
+        def initialize(attribute)
+          super
+          @expected_message = :present
         end
 
         def matches?(subject)
           super(subject)
-          @expected_message ||= :present
-
           disallows_value_of(value, @expected_message)
         end
 
-        def description
-          "ensure that :#{@attribute} is empty/falsy"
+        def simple_description
+          "validate that :#{@attribute} is empty/falsy"
         end
 
         private

@@ -6,10 +6,10 @@ module Shoulda
         class EvenNumberMatcher < NumericTypeMatcher
           NON_EVEN_NUMBER_VALUE = 1
 
-          def description
+          def simple_description
             description = ''
 
-            if @strict
+            if expects_strict?
               description << 'strictly '
             end
 

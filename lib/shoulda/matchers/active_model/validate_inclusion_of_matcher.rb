@@ -310,31 +310,63 @@ EOT
           self
         end
 
+        def expects_to_allow_blank?
+          @options[:allow_blank]
+        end
+
         def allow_nil(allow_nil = true)
           @options[:allow_nil] = allow_nil
           self
         end
 
+        def expects_to_allow_nil?
+          @options[:allow_nil]
+        end
+
         def with_message(message)
           if message
+            @expects_custom_validation_message = true
             @low_message = message
             @high_message = message
           end
+
           self
         end
 
         def with_low_message(message)
-          @low_message = message if message
+          if message
+            @expects_custom_validation_message = true
+            @low_message = message
+          end
+
           self
         end
 
         def with_high_message(message)
-          @high_message = message if message
+          if message
+            @high_message = message
+          end
+
           self
         end
 
-        def description
-          "ensure that #{@attribute} is one of #{inspect_message}"
+        def simple_description
+          if @range
+            "validate that :#{@attribute} lies inside the range #{@range.inspect}"
+          else
+            description = "validate that :#{@attribute}"
+
+            if @array.many?
+              description << " is either " + @array.map(&:inspect).to_sentence(
+                two_words_connector: " or ",
+                last_word_connector: ", or "
+              )
+            else
+              description << " is #{@array.first.inspect}"
+            end
+
+            description
+          end
         end
 
         def matches?(subject)

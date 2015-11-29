@@ -6,10 +6,10 @@ module Shoulda
         class OddNumberMatcher < NumericTypeMatcher
           NON_ODD_NUMBER_VALUE = 2
 
-          def description
+          def simple_description
             description = ''
 
-            if @strict
+            if expects_strict?
               description << 'strictly '
             end
 

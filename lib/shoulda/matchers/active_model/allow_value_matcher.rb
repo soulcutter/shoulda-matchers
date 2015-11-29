@@ -362,7 +362,8 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           @options = {}
           @after_setting_value_callback = -> {}
           @ignoring_interference_by_writer = false
-          @strict = false
+          @expects_strict = false
+          @expects_custom_validation_message = false
           @context = nil
         end
 
@@ -382,6 +383,7 @@ https://github.com/thoughtbot/shoulda-matchers/issues
 
         def with_message(message, given_options = {})
           if message.present?
+            @expects_custom_validation_message = true
             options[:expected_message] = message
             options[:expected_message_values] = given_options.fetch(:values, {})
 
@@ -393,9 +395,17 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           self
         end
 
-        def strict(strict = true)
-          @strict = strict
+        def expects_custom_validation_message?
+          @expects_custom_validation_message
+        end
+
+        def strict(expects_strict = true)
+          @expects_strict = expects_strict
           self
+        end
+
+        def expects_strict?
+          @expects_strict
         end
 
         def ignoring_interference_by_writer
@@ -483,6 +493,9 @@ https://github.com/thoughtbot/shoulda-matchers/issues
             else
               message << ', but it was valid instead.'
             end
+          elsif validator.captured_validation_exception?
+            message << ' and to produce validation errors, but the record'
+            message << ' raised a validation exception instead.'
           else
             message << ' and to raise a validation exception, but the record'
             message << ' produced validation errors instead.'
@@ -491,15 +504,12 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           Shoulda::Matchers.word_wrap(message)
         end
 
+        def simple_description
+          "allow :#{attribute_to_set} to be #{inspected_values_to_set}"
+        end
+
         def description
-          description =
-            "allow :#{attribute_to_set} to be #{inspected_values_to_set}"
-
-          if strict?
-            description << ', raising a validation exception upon failure'
-          end
-
-          description
+          ValidationMatcher::BuildDescription.call(self, simple_description)
         end
 
         protected
@@ -515,10 +525,6 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         )
 
         private
-
-        def strict?
-          @strict
-        end
 
         def model
           instance.class
@@ -575,30 +581,6 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           validator.captured_range_error?
         end
 
-        # def primary_expectation
-          # description
-        # end
-
-        # def primary_actuality
-          # "was not valid"
-        # end
-
-        # def primary_actuality_when_negated
-          # "was valid"
-        # end
-
-        # def secondary_expectation
-          # validator.expected_messages_description(expected_message)
-        # end
-
-        # def secondary_expectation_when_negated
-          # validator.expected_messages_description_when_negated(expected_message)
-        # end
-
-        # def secondary_actuality
-          # validator.actual_messages_description
-        # end
-
         def inspected_values_to_set
           if values_to_set.size > 1
             values_to_set.map(&:inspect).to_sentence(
@@ -621,7 +603,7 @@ https://github.com/thoughtbot/shoulda-matchers/issues
         end
 
         def default_expected_message
-          if strict?
+          if expects_strict?
             "#{human_attribute_name} #{default_attribute_message}"
           else
             default_attribute_message
@@ -657,7 +639,7 @@ https://github.com/thoughtbot/shoulda-matchers/issues
             attribute_to_check_message_against
           )
           validator.context = context
-          validator.strict = strict?
+          validator.expects_strict = expects_strict?
           validator
         end
 

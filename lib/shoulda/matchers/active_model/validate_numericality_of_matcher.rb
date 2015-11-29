@@ -314,9 +314,9 @@ module Shoulda
           @attribute = attribute
           @submatchers = []
           @diff_to_compare = DEFAULT_DIFF_TO_COMPARE
-          @using_custom_message = false
-          @allow_nil = false
-          @strict = false
+          @expects_custom_validation_message = false
+          @expects_to_allow_nil = false
+          @expects_strict = false
           @allowed_type_adjective = nil
           @allowed_type_name = 'number'
 
@@ -324,9 +324,13 @@ module Shoulda
         end
 
         def strict
-          @strict = true
+          @expects_strict = true
           @submatchers.each(&:strict)
           self
+        end
+
+        def expects_strict?
+          @expects_strict
         end
 
         def only_integer
@@ -337,13 +341,17 @@ module Shoulda
         end
 
         def allow_nil
-          @allow_nil = true
+          @expects_to_allow_nil = true
           prepare_submatcher(
             AllowValueMatcher.new(nil)
               .for(@attribute)
               .with_message(:not_a_number)
           )
           self
+        end
+
+        def expects_to_allow_nil?
+          @expects_to_allow_nil
         end
 
         def odd
@@ -386,9 +394,13 @@ module Shoulda
         end
 
         def with_message(message)
-          @using_custom_message = true
+          @expects_custom_validation_message = true
           @submatchers.each { |matcher| matcher.with_message(message) }
           self
+        end
+
+        def expects_custom_validation_message?
+          @expects_custom_validation_message
         end
 
         def on(context)
@@ -415,7 +427,7 @@ module Shoulda
           first_failing_submatcher.nil?
         end
 
-        def description
+        def simple_description
           description = ''
 
           description << "validate that :#{@attribute} looks like "
@@ -425,14 +437,18 @@ module Shoulda
             description << ' ' + comparison_descriptions
           end
 
-          ValidationMatcher::BuildDescription.call(self, description)
+          description
+        end
+
+        def description
+          ValidationMatcher::BuildDescription.call(self, simple_description)
         end
 
         def failure_message
           "#{overall_failure_message}".tap do |message|
             failing_submatchers.each do |submatcher|
               if number_of_submatchers_for_failure_message > 1
-                submatcher_description = submatcher.description.
+                submatcher_description = submatcher.simple_description.
                   sub(/\bvalidate that\b/, 'validates').
                   sub(/\bdisallow\b/, 'disallows').
                   sub(/\ballow\b/, 'allows')
@@ -471,10 +487,6 @@ module Shoulda
         end
 
         private
-
-        def strict?
-          @strict
-        end
 
         def model
           @subject.class

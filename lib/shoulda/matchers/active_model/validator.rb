@@ -5,13 +5,13 @@ module Shoulda
       class Validator
         include Helpers
 
-        attr_writer :context, :strict
+        attr_writer :context, :expects_strict
 
         def initialize(record, attribute)
           @record = record
           @attribute = attribute
           @context = context
-          @strict = false
+          @expects_strict = false
           reset
         end
 
@@ -40,7 +40,7 @@ module Shoulda
         end
 
         def messages
-          if strict?
+          if expects_strict?
             [validation_exception_message]
           else
             validation_error_messages
@@ -52,7 +52,7 @@ module Shoulda
         end
 
         def type_of_message_matched?
-          strict? == captured_validation_exception?
+          expects_strict? == captured_validation_exception?
         end
 
         def captured_validation_exception?
@@ -89,8 +89,8 @@ module Shoulda
 
         private
 
-        def strict?
-          @strict
+        def expects_strict?
+          @expects_strict
         end
 
         def validation_result
