@@ -218,6 +218,8 @@ module Shoulda
         def initialize(attribute)
           super(attribute)
           @options = {}
+          @failure_reason = nil
+          @failure_reason_when_negated = nil
         end
 
         def scoped_to(*scopes)
@@ -245,17 +247,19 @@ module Shoulda
           self
         end
 
-        def description
-          description = "ensure that #{@attribute} is unique"
-
-          if @options[:scopes].present?
-            description << " scoped to #{@options[:scopes].to_sentence}"
-          end
+        def simple_description
+          description = "validate that :#{@attribute} is"
 
           if @options[:case_insensitive]
             description << ' case insensitively'
           else
             description << ' case sensitively'
+          end
+
+          description << ' unique'
+
+          if @options[:scopes].present?
+            description << " within the scope of #{inspected_expected_scopes}"
           end
 
           description
@@ -278,6 +282,16 @@ module Shoulda
           Uniqueness::TestModels.remove_all
         end
 
+        protected
+
+        def failure_reason
+          @failure_reason || super
+        end
+
+        def failure_reason_when_negated
+          @failure_reason_when_negated || super
+        end
+
         private
 
         def validation
@@ -287,28 +301,41 @@ module Shoulda
         end
 
         def scopes_match?
-          expected_scopes = Array.wrap(@options[:scopes])
-
-          if validation
-            actual_scopes = Array.wrap(validation.options[:scope])
-          else
-            actual_scopes = []
-          end
-
           if expected_scopes == actual_scopes
             true
           else
-            @failure_message = "Expected validation to be scoped to " +
-              "#{expected_scopes}"
+            @failure_reason = "Expected the validation to be scoped to " +
+              "#{inspected_expected_scopes}"
 
             if actual_scopes.present?
-              @failure_message << ", but it was scoped to #{actual_scopes}."
+              @failure_reason << ", but it was scoped to "
+              @failure_reason << "#{inspected_actual_scopes} instead."
             else
-              @failure_message << ", but it was not scoped to anything."
+              @failure_reason << ", but it was not scoped to anything."
             end
 
             false
           end
+        end
+
+        def expected_scopes
+          Array.wrap(@options[:scopes])
+        end
+
+        def inspected_expected_scopes
+          @options[:scopes].map(&:inspect).to_sentence
+        end
+
+        def actual_scopes
+          if validation
+            Array.wrap(validation.options[:scope])
+          else
+            []
+          end
+        end
+
+        def inspected_actual_scopes
+          actual_scopes.map(&:inspect).to_sentence
         end
 
         def allows_nil?
@@ -382,7 +409,9 @@ module Shoulda
         end
 
         def has_secure_password?
-          @subject.class.ancestors.map(&:to_s).include?('ActiveModel::SecurePassword::InstanceMethodsOnActivation')
+          @subject.class.ancestors.map(&:to_s).include?(
+            'ActiveModel::SecurePassword::InstanceMethodsOnActivation'
+          )
         end
 
         def set_scoped_attributes
@@ -393,7 +422,8 @@ module Shoulda
                 @subject.__send__(setter, existing_record.__send__(scope))
                 true
               else
-                @failure_message = "#{class_name} doesn't seem to have a #{scope} attribute."
+                @failure_reason =
+                  "#{model.name} doesn't seem to have a :#{scope} attribute."
                 false
               end
             end
@@ -422,7 +452,7 @@ module Shoulda
             else
               if value == swapcased_value
                 raise NonCaseSwappableValueError.create(
-                  model: @subject.class,
+                  model: model,
                   attribute: @attribute,
                   value: value
                 )
@@ -463,12 +493,8 @@ module Shoulda
 
               if allows_value_of(existing_value, @expected_message)
                 @subject.__send__("#{scope}=", previous_value)
-
-                @failure_message_when_negated <<
-                  " (with different value of #{scope})"
                 true
               else
-                @failure_message << " (with different value of #{scope})"
                 false
               end
             end
@@ -560,8 +586,8 @@ module Shoulda
           existing_record.__send__(@attribute)
         end
 
-        def class_name
-          @subject.class.name
+        def model
+          @subject.class
         end
 
         def column_for(scope)

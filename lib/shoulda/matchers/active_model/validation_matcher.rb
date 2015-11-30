@@ -49,11 +49,11 @@ module Shoulda
         end
 
         def failure_message
-          "#{overall_failure_message}".tap do |message|
-            if submatcher_failure_message.present?
+          overall_failure_message.dup.tap do |message|
+            if failure_reason.present?
               message << "\n"
               message << Shoulda::Matchers.word_wrap(
-                submatcher_failure_message,
+                failure_reason,
                 indent: 2
               )
             end
@@ -61,11 +61,11 @@ module Shoulda
         end
 
         def failure_message_when_negated
-          "#{overall_failure_message_when_negated}".tap do |message|
-            if submatcher_failure_message_when_negated.present?
+          overall_failure_message_when_negated.dup.tap do |message|
+            if failure_reason_when_negated.present?
               message << "\n"
               message << Shoulda::Matchers.word_wrap(
-                submatcher_failure_message_when_negated,
+                failure_reason_when_negated,
                 indent: 2
               )
             end
@@ -122,11 +122,11 @@ module Shoulda
           )
         end
 
-        def submatcher_failure_message
+        def failure_reason
           last_submatcher_run.failure_message
         end
 
-        def submatcher_failure_message_when_negated
+        def failure_reason_when_negated
           last_submatcher_run.failure_message_when_negated
         end
 

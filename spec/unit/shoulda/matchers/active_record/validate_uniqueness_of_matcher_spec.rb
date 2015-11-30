@@ -66,51 +66,97 @@ describe Shoulda::Matchers::ActiveRecord::ValidateUniquenessOfMatcher, type: :mo
     end
 
     context 'when too narrow of a scope is specified' do
-      it 'rejects' do
+      it 'rejects with an appropriate failure message' do
         record = build_record_validating_uniqueness(
           scopes: [
             build_attribute(name: :scope1),
-            { name: :scope2 }
+            build_attribute(name: :scope2)
           ],
         )
-        expect(record).
-          not_to validate_uniqueness.
-          scoped_to(:scope1, :scope2, :other)
+
+        assertion = lambda do
+          expect(record).
+            to validate_uniqueness.
+            scoped_to(:scope1, :scope2, :other)
+        end
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr is case sensitively unique
+within the scope of :scope1, :scope2, and :other.
+  Expected the validation to be scoped to :scope1, :scope2, and :other,
+  but it was scoped to :scope1 and :scope2 instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
 
     context 'when too broad of a scope is specified' do
-      it 'rejects' do
+      it 'rejects with an appropriate failure message' do
         record = build_record_validating_uniqueness(
           scopes: [
             build_attribute(name: :scope1),
-            { name: :scope2 }
+            build_attribute(name: :scope2)
           ],
         )
-        expect(record).
-          not_to validate_uniqueness.
-          scoped_to(:scope1)
+
+        assertion = lambda do
+          expect(record).
+            to validate_uniqueness.
+            scoped_to(:scope1)
+        end
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr is case sensitively unique
+within the scope of :scope1, :scope2, and :other.
+  Expected the validation to be scoped to :scope1, but it was scoped to
+  :scope1 and :scope2 instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
 
     context 'when a different scope is specified' do
-      it 'rejects' do
+      it 'rejects with an appropriate failure message' do
         record = build_record_validating_uniqueness(
-          scopes: [ build_attribute(name: :scope) ],
-          additional_attributes: [:other]
+          scopes: [ build_attribute(name: :other) ],
+          additional_attributes: [:scope]
         )
-        expect(record).
-          not_to validate_uniqueness.
-          scoped_to(:other)
+        assertion = lambda do
+          expect(record).
+            to validate_uniqueness.
+            scoped_to(:scope)
+        end
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr is case sensitively unique
+within the scope of :scope.
+  Expected the validation to be scoped to :scope, but it was scoped to
+  :other instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
     end
 
     context 'when no scope is specified' do
-      it 'rejects' do
+      it 'rejects with an appropriate failure message' do
         record = build_record_validating_uniqueness(
           scopes: [ build_attribute(name: :scope) ]
         )
-        expect(record).not_to validate_uniqueness
+
+        assertion = lambda do
+          expect(record).to validate_uniqueness
+        end
+
+        message = <<-MESSAGE
+Example did not properly validate that :attr is case sensitively unique.
+  Expected the validation to be scoped to :scope, but it was scoped to
+  :other instead.
+        MESSAGE
+
+        expect(&assertion).to fail_with_message(message)
       end
 
       it 'rejects if the scope is unset beforehand' do
