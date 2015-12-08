@@ -123,11 +123,11 @@ module Shoulda
         end
 
         def failure_reason
-          last_submatcher_run.failure_message
+          last_submatcher_run.try(:failure_message)
         end
 
         def failure_reason_when_negated
-          last_submatcher_run.failure_message_when_negated
+          last_submatcher_run.try(:failure_message_when_negated)
         end
 
         def build_allow_or_disallow_value_matcher(args)

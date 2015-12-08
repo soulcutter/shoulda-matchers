@@ -57,7 +57,7 @@ module Shoulda
       #
       #     Failures:
       #
-      #       1) Post should require case sensitive unique value for title
+      #       1) Post should validate :title to be case-sensitively unique
       #          Failure/Error: it { should validate_uniqueness_of(:title) }
       #          ActiveRecord::StatementInvalid:
       #            SQLite3::ConstraintException: posts.content may not be NULL: INSERT INTO "posts" ("title") VALUES (?)
@@ -217,18 +217,17 @@ module Shoulda
 
         def initialize(attribute)
           super(attribute)
+          @expected_message = :taken
           @options = {}
+          @existing_record = nil
+          @existing_record_created = false
+          @original_existing_value = nil
           @failure_reason = nil
           @failure_reason_when_negated = nil
         end
 
         def scoped_to(*scopes)
           @options[:scopes] = [*scopes].flatten
-          self
-        end
-
-        def with_message(message)
-          @expected_message = message
           self
         end
 
@@ -242,18 +241,26 @@ module Shoulda
           self
         end
 
+        def expects_to_allow_nil?
+          @options[:allow_nil]
+        end
+
         def allow_blank
           @options[:allow_blank] = true
           self
+        end
+
+        def expects_to_allow_blank?
+          @options[:allow_blank]
         end
 
         def simple_description
           description = "validate that :#{@attribute} is"
 
           if @options[:case_insensitive]
-            description << ' case insensitively'
+            description << ' case-insensitively'
           else
-            description << ' case sensitively'
+            description << ' case-sensitively'
           end
 
           description << ' unique'
@@ -265,14 +272,13 @@ module Shoulda
           description
         end
 
-        def matches?(subject)
-          @original_subject = subject
-          @subject = subject.class.new
-          @expected_message ||= :taken
-          @all_records = @subject.class.all
+        def matches?(given_record)
+          @given_record = given_record
+          @all_records = model.all
 
-          scopes_match? &&
-            set_scoped_attributes &&
+          existing_record_valid? &&
+            validate_scopes_present? &&
+            scopes_match? &&
             validate_everything_except_duplicate_nils_or_blanks? &&
             validate_case_sensitivity? &&
             validate_after_scope_change? &&
@@ -292,10 +298,21 @@ module Shoulda
           @failure_reason_when_negated || super
         end
 
+        def build_allow_or_disallow_value_matcher(args)
+          super.tap do |matcher|
+            matcher.failure_message_preface = method(:failure_message_preface)
+          end
+        end
+
         private
 
+        def new_record
+          @_new_record ||= build_new_record
+        end
+        alias_method :subject, :new_record
+
         def validation
-          @subject.class._validators[@attribute].detect do |validator|
+          model._validators[@attribute].detect do |validator|
             validator.is_a?(::ActiveRecord::Validations::UniquenessValidator)
           end
         end
@@ -304,14 +321,19 @@ module Shoulda
           if expected_scopes == actual_scopes
             true
           else
-            @failure_reason = "Expected the validation to be scoped to " +
-              "#{inspected_expected_scopes}"
+            @failure_reason = 'Expected the validation'
 
-            if actual_scopes.present?
-              @failure_reason << ", but it was scoped to "
-              @failure_reason << "#{inspected_actual_scopes} instead."
+            if expected_scopes.empty?
+              @failure_reason << ' not to be scoped to anything'
             else
-              @failure_reason << ", but it was not scoped to anything."
+              @failure_reason << " to be scoped to #{inspected_expected_scopes}"
+            end
+
+            if actual_scopes.empty?
+              @failure_reason << ', but it was not scoped to anything.'
+            else
+              @failure_reason << ', but it was scoped to '
+              @failure_reason << "#{inspected_actual_scopes} instead."
             end
 
             false
@@ -323,7 +345,7 @@ module Shoulda
         end
 
         def inspected_expected_scopes
-          @options[:scopes].map(&:inspect).to_sentence
+          expected_scopes.map(&:inspect).to_sentence
         end
 
         def actual_scopes
@@ -339,8 +361,8 @@ module Shoulda
         end
 
         def allows_nil?
-          if @options[:allow_nil]
-            ensure_nil_record_in_database
+          if expects_to_allow_nil?
+            update_existing_record(nil)
             allows_value_of(nil, @expected_message)
           else
             true
@@ -348,49 +370,77 @@ module Shoulda
         end
 
         def allows_blank?
-          if @options[:allow_blank]
-            ensure_blank_record_in_database
+          if expects_to_allow_blank?
+            update_existing_record('')
             allows_value_of('', @expected_message)
           else
             true
           end
         end
 
+        def existing_record_valid?
+          if existing_record.valid?
+            true
+          else
+            @failure_reason =
+              "Given record could not be set to #{value.inspect}: " +
+              existing_record.errors.full_messages
+            false
+          end
+        end
+
         def existing_record
-          @existing_record ||= first_instance
+          @existing_record ||= find_or_create_existing_record
         end
 
-        def first_instance
-          @subject.class.first || create_record_in_database
-        end
-
-        def ensure_nil_record_in_database
-          unless existing_record_is_nil?
-            create_record_in_database(nil_value: true)
+        def find_or_create_existing_record
+          if find_existing_record
+            find_existing_record
+          else
+            create_existing_record.tap do |existing_record|
+              @existing_record_created = true
+            end
           end
         end
 
-        def ensure_blank_record_in_database
-          unless existing_record_is_blank?
-            create_record_in_database(blank_value: true)
+        def find_existing_record
+          record = model.first
+
+          if valid_existing_record?(record)
+            record.tap do |existing_record|
+              @original_existing_value = existing_record.public_send(@attribute)
+            end
+          else
+            nil
           end
         end
 
-        def existing_record_is_nil?
-          @existing_record.present? && existing_value.nil?
+        def valid_existing_record?(record)
+          record.present? &&
+            record_has_nil_when_required?(record) &&
+            record_has_blank_when_required?(record)
         end
 
-        def existing_record_is_blank?
-          @existing_record.present? && existing_value.strip == ''
+        def record_has_nil_when_required?(record)
+          !expects_to_allow_nil? || record.public_send(@attribute).nil?
         end
 
-        def create_record_in_database(options = {})
-          @original_subject.tap do |instance|
-            instance.__send__("#{@attribute}=", value_for_new_record(options))
-            ensure_secure_password_set(instance)
-            instance.save(validate: false)
-            @created_record = instance
+        def record_has_blank_when_required?(record)
+          !expects_to_allow_blank? ||
+            record.public_send(@attribute).to_s.strip.empty?
+        end
+
+        def create_existing_record
+          @given_record.tap do |existing_record|
+            @original_existing_value = value = arbitrary_non_blank_value
+            existing_record.public_send("#{@attribute}=", value)
+            ensure_secure_password_set(existing_record)
+            existing_record.save
           end
+        end
+
+        def update_existing_record(value)
+          existing_record.update_column(attribute, value)
         end
 
         def ensure_secure_password_set(instance)
@@ -400,42 +450,74 @@ module Shoulda
           end
         end
 
-        def value_for_new_record(options = {})
-          case
-            when options[:nil_value] then nil
-            when options[:blank_value] then ''
-            else 'a'
+        def arbitrary_non_blank_value
+          limit = column_limit_for(@attribute)
+
+          if limit
+            'x' * limit
+          else
+            'an arbitrary value'
           end
         end
 
         def has_secure_password?
-          @subject.class.ancestors.map(&:to_s).include?(
+          model.ancestors.map(&:to_s).include?(
             'ActiveModel::SecurePassword::InstanceMethodsOnActivation'
           )
         end
 
-        def set_scoped_attributes
-          if @options[:scopes].present?
-            @options[:scopes].all? do |scope|
-              setter = :"#{scope}="
-              if @subject.respond_to?(setter)
-                @subject.__send__(setter, existing_record.__send__(scope))
-                true
-              else
-                @failure_reason =
-                  "#{model.name} doesn't seem to have a :#{scope} attribute."
-                false
-              end
+        def build_new_record
+          existing_record.dup.tap do |new_record|
+            new_record.public_send("#{@attribute}=", existing_value)
+
+            expected_scopes.each do |scope|
+              new_record.public_send(
+                "#{scope}=",
+                existing_record.public_send(scope)
+              )
             end
-          else
-            true
           end
         end
 
+        def validate_scopes_present?
+          if all_scopes_present_on_model?
+            true
+          else
+            reason = ''
+
+            reason << inspected_missing_scopes.to_sentence
+
+            if inspected_missing_scopes.many?
+              reason << " aren't scopes"
+            else
+              reason << " isn't a scope"
+            end
+
+            reason << " on #{model.name}."
+
+            @failure_reason = reason
+
+            false
+          end
+        end
+
+        def all_scopes_present_on_model?
+          missing_scopes.none?
+        end
+
+        def missing_scopes
+          @_missing_scopes ||= expected_scopes.select do |scope|
+            !@given_record.respond_to?("#{scope}=")
+          end
+        end
+
+        def inspected_missing_scopes
+          missing_scopes.map(&:inspect)
+        end
+
         def validate_everything_except_duplicate_nils_or_blanks?
-          if (@options[:allow_nil] && existing_value.nil?) ||
-             (@options[:allow_blank] && existing_value.blank?)
-            create_record_with_value
+          if existing_value.nil? || (expects_to_allow_blank? && existing_value.blank?)
+            update_existing_record(arbitrary_non_blank_value)
           end
 
           disallows_value_of(existing_value, @expected_message)
@@ -444,7 +526,7 @@ module Shoulda
         def validate_case_sensitivity?
           value = existing_value
 
-          if value.respond_to?(:swapcase)
+          if value.respond_to?(:swapcase) && !value.empty?
             swapcased_value = value.swapcase
 
             if @options[:case_insensitive]
@@ -465,10 +547,6 @@ module Shoulda
           end
         end
 
-        def create_record_with_value
-          @existing_record = create_record_in_database
-        end
-
         def model_class?(model_name)
           model_name.constantize.ancestors.include?(::ActiveRecord::Base)
         rescue NameError
@@ -476,10 +554,10 @@ module Shoulda
         end
 
         def validate_after_scope_change?
-          if @options[:scopes].blank? || all_scopes_are_booleans?
+          if expected_scopes.empty? || all_scopes_are_booleans?
             true
           else
-            @options[:scopes].all? do |scope|
+            expected_scopes.all? do |scope|
               previous_value = @all_records.map(&scope).compact.max
 
               next_value =
@@ -489,10 +567,10 @@ module Shoulda
                   next_value_for(scope, previous_value)
                 end
 
-              @subject.__send__("#{scope}=", next_value)
+              new_record.public_send("#{scope}=", next_value)
 
               if allows_value_of(existing_value, @expected_message)
-                @subject.__send__("#{scope}=", previous_value)
+                new_record.public_send("#{scope}=", previous_value)
                 true
               else
                 false
@@ -568,8 +646,8 @@ module Shoulda
         end
 
         def defined_as_enum?(scope)
-          @subject.class.respond_to?(:defined_enums) &&
-            @subject.defined_enums[scope.to_s]
+          model.respond_to?(:defined_enums) &&
+            new_record.defined_enums[scope.to_s]
         end
 
         def polymorphic_type_attribute?(scope, previous_value)
@@ -577,21 +655,62 @@ module Shoulda
         end
 
         def available_enum_values_for(scope, previous_value)
-          @subject.defined_enums[scope.to_s].reject do |key, _|
+          new_record.defined_enums[scope.to_s].reject do |key, _|
             key == previous_value
           end
         end
 
         def existing_value
-          existing_record.__send__(@attribute)
+          existing_record.public_send(@attribute)
         end
 
         def model
-          @subject.class
+          @given_record.class
         end
 
         def column_for(scope)
-          @subject.class.columns_hash[scope.to_s]
+          model.columns_hash[scope.to_s]
+        end
+
+        def column_limit_for(attribute)
+          column_for(attribute).try(:limit)
+        end
+
+        def failure_message_preface
+          prefix = ''
+
+          if @existing_record_created
+            prefix << "After taking the given #{model.name},"
+            prefix << " setting its :#{attribute} to"
+            prefix << " #{existing_value.inspect},"
+            prefix << " and saving it as the existing record,"
+            prefix << " then"
+          elsif @original_existing_value != existing_value
+            prefix << "Given an existing #{model.name},"
+            prefix << " after setting its :#{attribute} to"
+            prefix << " #{existing_value.inspect}, then"
+          else
+            prefix << "Given an existing #{model.name} whose :#{attribute}"
+            prefix << " is #{existing_value.inspect}, after"
+          end
+
+          prefix << " making a new #{model.name} and setting its"
+          prefix << " :#{attribute} to"
+
+          if last_value_set_on_new_record == existing_value
+            prefix << " #{last_value_set_on_new_record.inspect} as well"
+          else
+            prefix << " a different value,"
+            prefix << " #{last_value_set_on_new_record.inspect}"
+          end
+
+          prefix << ", the matcher expected the new #{model.name} to be"
+
+          prefix
+        end
+
+        def last_value_set_on_new_record
+          last_submatcher_run.last_value_set
         end
 
         # @private

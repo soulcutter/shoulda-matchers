@@ -33,9 +33,9 @@ module Shoulda
             description_clauses = []
 
             if matcher.try(:expects_to_allow_blank?)
-              description_clauses << 'allowing it to be blank'
+              description_clauses << 'but only if it is not blank'
             elsif matcher.try(:expects_to_allow_nil?)
-              description_clauses << 'allowing it to be nil'
+              description_clauses << 'but only if it is not nil'
             end
 
             if matcher.try(:expects_strict?)

@@ -354,8 +354,8 @@ https://github.com/thoughtbot/shoulda-matchers/issues
 
         include Helpers
 
-        attr_accessor :attribute_with_message
-        attr_accessor :options
+        attr_accessor :failure_message_preface
+        attr_reader :last_value_set
 
         def initialize(*values)
           @values_to_set = values
@@ -365,6 +365,13 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           @expects_strict = false
           @expects_custom_validation_message = false
           @context = nil
+
+          @failure_message_preface = proc do
+            <<-PREFIX
+              After setting :#{attribute_to_set} to #{last_value_set.inspect},
+              the matcher expected the #{model.name} to be
+            PREFIX
+          end
         end
 
         def for(attribute)
@@ -429,10 +436,9 @@ https://github.com/thoughtbot/shoulda-matchers/issues
 
         def failure_message
           validator = first_failing_validator
-
-          message = "After setting :#{attribute_to_set} to #{value.inspect}," +
-            " the matcher expected the #{model.name} to be valid," +
-            ' but it was invalid instead,'
+          message =
+            failure_message_preface.call +
+            ' valid, but it was invalid instead,'
 
           if validator.captured_validation_exception?
             message << ' raising a validation exception with the message '
@@ -448,9 +454,7 @@ https://github.com/thoughtbot/shoulda-matchers/issues
 
         def failure_message_when_negated
           validator = first_passing_validator
-          message =
-            "After setting :#{attribute_to_set} to #{value.inspect}," +
-            " the matcher expected the #{model.name} to be invalid"
+          message = failure_message_preface.call + ' invalid'
 
           if validator.type_of_message_matched?
             if validator.has_messages?
@@ -512,6 +516,10 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           ValidationMatcher::BuildDescription.call(self, simple_description)
         end
 
+        def model
+          instance.class
+        end
+
         protected
 
         attr_reader(
@@ -520,22 +528,18 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           :attribute_to_set,
           :context,
           :instance,
-          :value,
+          :options,
           :values_to_set,
         )
 
         private
-
-        def model
-          instance.class
-        end
 
         def ignoring_interference_by_writer?
           @ignoring_interference_by_writer
         end
 
         def value_matches?(value, validator)
-          @value = value
+          @last_value_set = value
           set_attribute(value)
           !errors_match?(validator) && !any_range_error_occurred?(validator)
         end
