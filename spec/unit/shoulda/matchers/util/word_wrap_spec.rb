@@ -87,8 +87,8 @@ risus, non faucibus sem.
 
     expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 * Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
-  luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla
-  erat, sed posuere diam ex ut velit.
+  luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla erat,
+  sed posuere diam ex ut velit.
 * And the beat goes on.
     MESSAGE
   end
@@ -106,8 +106,8 @@ risus, non faucibus sem.
 
     expect(wrapped_message).to eq(<<-MESSAGE.rstrip)
 * Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
-  luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla
-  erat, sed posuere diam ex ut velit.
+  luctus, ipsum sit amet efficitur feugiat, dolor mauris fringilla erat,
+  sed posuere diam ex ut velit.
 * And the beat goes on.
     MESSAGE
   end
