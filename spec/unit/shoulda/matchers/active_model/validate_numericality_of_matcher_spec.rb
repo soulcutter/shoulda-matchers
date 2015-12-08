@@ -198,8 +198,8 @@ Example did not properly validate that :attr looks like a number.
         end
 
         message = <<-MESSAGE
-Example did not properly validate that :attr looks like a number,
-allowing it to be nil.
+Example did not properly validate that :attr looks like a number, but
+only if it is not nil.
   In checking that Example allows :attr to be nil, after setting :attr
   to nil, the matcher expected the Example to be valid, but it was
   invalid instead, producing these validation errors:

@@ -367,7 +367,7 @@ https://github.com/thoughtbot/shoulda-matchers/issues
           @context = nil
 
           @failure_message_preface = proc do
-            <<-PREFIX
+            <<-PREFIX.strip_heredoc.strip
               After setting :#{attribute_to_set} to #{last_value_set.inspect},
               the matcher expected the #{model.name} to be
             PREFIX
